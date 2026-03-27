@@ -6,8 +6,98 @@ import { sendTelegramFile } from '../lib/telegram';
 import {
   BookOpen, MessageSquare, BriefcaseBusiness, Brain,
   Lock, ChevronDown, ChevronUp, Copy, Check,
-  Download, RefreshCw, CreditCard, Settings
+  Download, RefreshCw, CreditCard, Settings, User
 } from 'lucide-react';
+
+function UserProfileCard({ user, isPaid }) {
+  const initials = `${(user?.firstName || '')[0] || ''}${(user?.lastName || '')[0] || ''}`.toUpperCase() || 'U';
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '16px 20px',
+      background: 'var(--gray-50)',
+      borderBottom: '1px solid var(--gray-100)',
+    }}>
+      {/* Avatar */}
+      {user?.photoUrl ? (
+        <img
+          src={user.photoUrl}
+          alt={user.firstName}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: '50%',
+            objectFit: 'cover',
+            border: '2px solid var(--white)',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+        />
+      ) : (
+        <div style={{
+          width: 44,
+          height: 44,
+          borderRadius: '50%',
+          background: 'var(--black)',
+          color: 'var(--white)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 16,
+          fontWeight: 700,
+          flexShrink: 0,
+          border: '2px solid var(--white)',
+          boxShadow: 'var(--shadow-sm)'
+        }}>
+          {initials}
+        </div>
+      )}
+
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontWeight: 700,
+          fontSize: 15,
+          color: 'var(--black)',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6
+        }}>
+          {user?.firstName} {user?.lastName || ''}
+          {isPaid && (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '2px 8px',
+              borderRadius: 12,
+              background: '#e8f5e9',
+              color: '#2e7d32',
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: 0.3
+            }}>
+              PRO
+            </span>
+          )}
+        </div>
+        <div style={{
+          fontSize: 13,
+          color: 'var(--gray-500)',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        }}>
+          {user?.username ? `@${user.username}` : `ID: ${user?.id}`}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function MainScreen() {
   const { state, dispatch, showToast } = useApp();
@@ -229,7 +319,7 @@ export function MainScreen() {
     <div className="app-container">
       {/* Header */}
       <div style={{
-        padding: '16px 20px',
+        padding: '12px 20px',
         borderBottom: '1px solid var(--gray-100)',
         display: 'flex',
         alignItems: 'center',
@@ -240,7 +330,7 @@ export function MainScreen() {
         zIndex: 50
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/assets/logo.png" alt="Logo" style={{ width: 32, height: 'auto' }} />
+          <img src="/assets/logo.png" alt="Logo" style={{ width: 28, height: 'auto' }} />
           <span style={{ fontWeight: 700, fontSize: 16 }}>Nihon Ready</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -258,6 +348,9 @@ export function MainScreen() {
           </button>
         </div>
       </div>
+
+      {/* User Profile */}
+      <UserProfileCard user={state.user} isPaid={isPaid} />
 
       {/* Tabs */}
       <div className="tabs">
