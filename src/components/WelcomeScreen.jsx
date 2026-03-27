@@ -1,0 +1,87 @@
+import { useApp } from '../context/AppContext';
+import { ArrowRight, Sparkles, BookOpen, BriefcaseBusiness, Brain } from 'lucide-react';
+
+export function WelcomeScreen() {
+  const { state, dispatch } = useApp();
+
+  const features = [
+    { icon: <BookOpen size={20} />, text: 'Interview မိတ်ဆက်စာပိုဒ် (ဂျပန်/ရိုမာဂျီး/မြန်မာ)' },
+    { icon: <Sparkles size={20} />, text: 'Interview မေးခွန်း ၄၅ ခု နှင့် အဖြေများ' },
+    { icon: <BriefcaseBusiness size={20} />, text: 'လုပ်ငန်းခွင် အတွေ့အကြုံ နှင့် Manners များ' },
+    { icon: <Brain size={20} />, text: 'AI Master Prompt ကိုယ်ပိုင် Mentor' },
+  ];
+
+  return (
+    <div className="page" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '100vh' }}>
+      <div className="fade-in-up" style={{ textAlign: 'center', marginBottom: 40 }}>
+        <img 
+          src="/assets/logo.png" 
+          alt="Nihon Ready" 
+          style={{ width: 140, height: 'auto', marginBottom: 24 }}
+        />
+        <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, color: 'var(--black)' }}>
+          Nihon Ready
+        </h1>
+        <p style={{ fontSize: 15, color: 'var(--gray-500)', maxWidth: 300, margin: '0 auto', lineHeight: 1.7 }}>
+          ဂျပန်နိုင်ငံတွင် အလုပ်လုပ်ဖို့ ပြင်ဆင်နေတဲ့ မြန်မာလူမျိုးများအတွက် Interview Preparation App
+        </p>
+      </div>
+
+      <div className="fade-in-up" style={{ marginBottom: 32, animationDelay: '0.15s', animationFillMode: 'both' }}>
+        {features.map((feature, i) => (
+          <div 
+            key={i}
+            className="fade-in-up"
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 14, 
+              padding: '14px 0',
+              borderBottom: i < features.length - 1 ? '1px solid var(--gray-100)' : 'none',
+              animationDelay: `${0.2 + i * 0.08}s`,
+              animationFillMode: 'both'
+            }}
+          >
+            <div style={{ 
+              width: 40, 
+              height: 40, 
+              borderRadius: 10, 
+              background: 'var(--gray-50)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              flexShrink: 0 
+            }}>
+              {feature.icon}
+            </div>
+            <span style={{ fontSize: 14, color: 'var(--gray-700)', lineHeight: 1.5 }}>
+              {feature.text}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {state.user && (
+        <div className="fade-in-up" style={{ 
+          textAlign: 'center', 
+          marginBottom: 20,
+          animationDelay: '0.4s',
+          animationFillMode: 'both'
+        }}>
+          <p style={{ fontSize: 15, color: 'var(--gray-600)' }}>
+            မင်္ဂလာပါ, <strong>{state.user.firstName}</strong>
+          </p>
+        </div>
+      )}
+
+      <button 
+        className="btn btn-primary btn-full btn-lg fade-in-up"
+        style={{ animationDelay: '0.5s', animationFillMode: 'both' }}
+        onClick={() => dispatch({ type: 'SET_SCREEN', payload: 'onboarding' })}
+      >
+        စတင်ရန်
+        <ArrowRight size={18} />
+      </button>
+    </div>
+  );
+}
