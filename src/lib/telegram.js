@@ -59,24 +59,23 @@ export function sendTelegramFile(userId, fileContent, fileName) {
   });
 }
 
-// Send notification to admin
+// Send notification to admin (only once to primary admin)
 export async function notifyAdmin(message) {
   const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-  if (!botToken) return;
+  if (!botToken || ADMIN_IDS.length === 0) return;
 
-  for (const adminId of ADMIN_IDS) {
-    try {
-      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: adminId,
-          text: message,
-          parse_mode: 'HTML'
-        })
-      });
-    } catch (e) {
-      console.error('Failed to notify admin:', e);
-    }
+  const primaryAdminId = ADMIN_IDS[0];
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: primaryAdminId,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    });
+  } catch (e) {
+    console.error('Failed to notify admin:', e);
   }
 }

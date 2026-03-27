@@ -11,6 +11,7 @@ export function PaymentScreen() {
   const { state, dispatch, showToast } = useApp();
   const [paymentSubmitted, setPaymentSubmitted] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const userId = state.user?.id || 'N/A';
   const onboardingCount = state.dbUser?.onboarding_count || 1;
@@ -28,11 +29,14 @@ export function PaymentScreen() {
   ];
 
   async function handlePaymentComplete() {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       if (state.user?.id) {
         await createPayment(state.user.id, totalPrice, isExtraOnboarding ? 'extra_onboarding' : 'unlock');
         
-        // Notify admin via Telegram
+        // Notify admin via Telegram (single notification)
         await notifyAdmin(
           `💳 <b>Payment Request</b>\n\n` +
           `User: ${state.user.firstName} ${state.user.lastName}\n` +
@@ -49,6 +53,7 @@ export function PaymentScreen() {
     } catch (error) {
       console.error('Payment error:', error);
       showToast('တစ်ခုခု မှားယွင်းနေပါသည်', 'error');
+      setIsSubmitting(false);
     }
   }
 
@@ -195,9 +200,19 @@ export function PaymentScreen() {
       <button
         className="btn btn-primary btn-full btn-lg"
         onClick={handlePaymentComplete}
+        disabled={isSubmitting}
       >
-        <Check size={18} />
-        Payment ချေပြီးပြီ
+        {isSubmitting ? (
+          <>
+            <div className="loading-spinner" style={{ width: 18, height: 18, borderWidth: 2 }}></div>
+            ပို့နေပါသည်...
+          </>
+        ) : (
+          <>
+            <Check size={18} />
+            Payment ချေပြီးပြီ
+          </>
+        )}
       </button>
 
       <p style={{ fontSize: 12, color: 'var(--gray-400)', textAlign: 'center', marginTop: 16, lineHeight: 1.5 }}>

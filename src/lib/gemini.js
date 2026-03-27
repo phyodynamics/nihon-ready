@@ -10,7 +10,7 @@ function getNextApiKey() {
 export async function callGemini(prompt, retries = 3) {
   for (let attempt = 0; attempt < retries; attempt++) {
     const apiKey = getNextApiKey();
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
     
     try {
       const response = await fetch(url, {
