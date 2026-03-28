@@ -724,6 +724,31 @@ function InterviewTestTab({ content, isPaid, onPayment, userData, showToast }) {
   const [answers, setAnswers] = useState([]);
   const [results, setResults] = useState(null);
 
+  const DAILY_LIMIT = 2;
+
+  function getDailyTestCount() {
+    try {
+      const data = JSON.parse(localStorage.getItem('nihon_test_usage') || '{}');
+      const today = new Date().toISOString().split('T')[0];
+      if (data.date !== today) return 0;
+      return data.count || 0;
+    } catch { return 0; }
+  }
+
+  function incrementDailyTestCount() {
+    const today = new Date().toISOString().split('T')[0];
+    const data = JSON.parse(localStorage.getItem('nihon_test_usage') || '{}');
+    if (data.date !== today) {
+      localStorage.setItem('nihon_test_usage', JSON.stringify({ date: today, count: 1 }));
+    } else {
+      localStorage.setItem('nihon_test_usage', JSON.stringify({ date: today, count: (data.count || 0) + 1 }));
+    }
+  }
+
+  const usedToday = getDailyTestCount();
+  const remaining = Math.max(0, DAILY_LIMIT - usedToday);
+  const canTest = remaining > 0;
+
   if (!isPaid) {
     return (
       <div className="fade-in">
@@ -750,6 +775,10 @@ function InterviewTestTab({ content, isPaid, onPayment, userData, showToast }) {
   }
 
   async function startTest() {
+    if (!canTest) {
+      showToast('ယနေ့အတွက် Test အကြိမ်ရေ ပြည့်သွားပါပြီ', 'error');
+      return;
+    }
     setTestState('loading');
     try {
       const prompt = buildTestQuestionsPrompt(content.questions || []);
@@ -770,6 +799,7 @@ function InterviewTestTab({ content, isPaid, onPayment, userData, showToast }) {
         throw new Error('No questions parsed');
       }
 
+      incrementDailyTestCount();
       setTestQuestions(parsed);
       setAnswers(parsed.map(() => ({ japaneseAnswer: '', burmeseAnswer: '' })));
       setCurrentQ(0);
@@ -819,12 +849,30 @@ function InterviewTestTab({ content, isPaid, onPayment, userData, showToast }) {
           မေးခွန်း ၄၅ ခုထဲမှ ကျပန်း ၁၀ ခုကို ရွေးထုတ်ပြီး
           <br />သင့်အဖြေများကို AI က စစ်ဆေးအမှတ်ပေးပါမည်
         </p>
-        <p style={{ fontSize: 13, color: 'var(--gray-400)', marginBottom: 24 }}>
+        <p style={{ fontSize: 13, color: 'var(--gray-400)', marginBottom: 12 }}>
           မြန်မာလို နှင့် ဂျပန်လို ၂ မျိုးလုံး ဖြေဆိုနိုင်ပါသည်
         </p>
-        <button className="btn btn-accent btn-lg" onClick={startTest}>
+        <div style={{
+          display: 'inline-block',
+          padding: '6px 16px',
+          borderRadius: 20,
+          background: canTest ? '#e8f5e9' : '#fce4ec',
+          color: canTest ? '#2e7d32' : '#c62828',
+          fontSize: 13,
+          fontWeight: 600,
+          marginBottom: 20,
+        }}>
+          ယနေ့ ကျန်ရှိ - {remaining} / {DAILY_LIMIT} ကြိမ်
+        </div>
+        <br />
+        <button
+          className="btn btn-accent btn-lg"
+          onClick={startTest}
+          disabled={!canTest}
+          style={{ opacity: canTest ? 1 : 0.5 }}
+        >
           <ClipboardCheck size={18} />
-          Test စတင်ရန်
+          {canTest ? 'Test စတင်ရန်' : 'ယနေ့ Test အကြိမ်ရေ ပြည့်ပြီ'}
         </button>
       </div>
     );
