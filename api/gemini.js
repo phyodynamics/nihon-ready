@@ -29,11 +29,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Prompt is required' });
   }
 
+  // Limit prompt size to prevent abuse (100KB max)
+  if (typeof prompt !== 'string' || prompt.length > 100000) {
+    return res.status(400).json({ error: 'Prompt too large or invalid' });
+  }
+
+  // Clamp retries to a reasonable range
+  const maxRetries = Math.min(Math.max(1, Number(retries) || 3), 5);
+
   if (API_KEYS.length === 0) {
     return res.status(500).json({ error: 'No API keys configured' });
   }
 
-  for (let attempt = 0; attempt < retries; attempt++) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     const apiKey = getNextApiKey();
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
@@ -65,7 +73,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ text });
     } catch (error) {
-      if (attempt === retries - 1) {
+      if (attempt === maxRetries - 1) {
         return res.status(500).json({ error: error.message });
       }
       await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));

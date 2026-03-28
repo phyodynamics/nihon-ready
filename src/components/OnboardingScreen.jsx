@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 
@@ -325,7 +325,7 @@ export function OnboardingScreen() {
       <div style={{ display: 'flex', gap: 12, paddingTop: 20, paddingBottom: 20 }}>
         <button className="btn btn-outline" onClick={handleBack}>
           <ArrowLeft size={18} />
-          {currentStep === 0 ? 'နောက်သို့' : 'နောက်သို့'}
+          {currentStep === 0 ? 'ပြန်သွားရန်' : 'နောက်သို့'}
         </button>
         <button
           className="btn btn-primary"

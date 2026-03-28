@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense, Component } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { isTelegramEnv, getTelegramUser, initTelegramApp, isAdmin } from './lib/telegram';
 import { getUser, createUser, getGeneratedContent, getPayment, getOnboardingData } from './lib/database';
@@ -8,6 +8,50 @@ import { NotTelegramScreen } from './components/NotTelegramScreen';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { preloadVoices } from './lib/tts';
 import './index.css';
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('App crash:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', minHeight: '100vh', padding: 24, textAlign: 'center'
+        }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>
+            တစ်ခုခု မှားယွင်းနေပါသည်
+          </h2>
+          <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>
+            App ကို ပြန်လည်စတင်ပေးပါ
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '10px 24px', borderRadius: 8, border: 'none',
+              background: '#000', color: '#fff', fontSize: 14,
+              fontWeight: 600, cursor: 'pointer'
+            }}
+          >
+            ပြန်စတင်ရန်
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Lazy load heavy screens for faster initial load
 const OnboardingScreen = lazy(() => import('./components/OnboardingScreen').then(m => ({ default: m.OnboardingScreen })));
@@ -212,9 +256,11 @@ function AppContent() {
 
 function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
 

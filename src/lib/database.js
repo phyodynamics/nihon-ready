@@ -110,6 +110,7 @@ export async function saveOnboardingData(telegramId, responses) {
     return onboarding.find(o => o.telegram_id === telegramId);
   }
 
+  // Use upsert to avoid race conditions between SELECT and INSERT/UPDATE
   const { data: existing } = await supabase
     .from('onboarding_responses')
     .select('id')
@@ -127,19 +128,19 @@ export async function saveOnboardingData(telegramId, responses) {
       .single();
     if (error) throw error;
     return data;
-  } else {
-    const { data, error } = await supabase
-      .from('onboarding_responses')
-      .insert([{
-        telegram_id: telegramId,
-        responses,
-        created_at: new Date().toISOString()
-      }])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
   }
+
+  const { data, error } = await supabase
+    .from('onboarding_responses')
+    .insert({
+      telegram_id: telegramId,
+      responses,
+      created_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 export async function getOnboardingData(telegramId) {
@@ -201,20 +202,20 @@ export async function saveGeneratedContent(telegramId, contentType, content) {
       .single();
     if (error) throw error;
     return data;
-  } else {
-    const { data, error } = await supabase
-      .from('generated_content')
-      .insert([{
-        telegram_id: telegramId,
-        content_type: contentType,
-        content,
-        created_at: new Date().toISOString()
-      }])
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
   }
+
+  const { data, error } = await supabase
+    .from('generated_content')
+    .insert({
+      telegram_id: telegramId,
+      content_type: contentType,
+      content,
+      created_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 export async function getGeneratedContent(telegramId, contentType) {

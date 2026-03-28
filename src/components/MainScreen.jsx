@@ -104,7 +104,7 @@ function UserProfileCard({ user, isPaid }) {
 export function MainScreen() {
   const { state, dispatch, showToast } = useApp();
   const [expandedAnswer, setExpandedAnswer] = useState(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
   const [generatingBatch, setGeneratingBatch] = useState(false);
   const [generatingThird, setGeneratingThird] = useState(false);
   const [generatingMentor, setGeneratingMentor] = useState(false);
@@ -115,15 +115,17 @@ export function MainScreen() {
   const content = state.generatedContent.first;
   const isPaid = state.isPaid;
 
-  useEffect(() => {
-    // Load saved content from database
-    loadSavedContent();
-  }, []);
+  const userId = state.user?.id;
 
-  async function loadSavedContent() {
-    if (!state.user?.id) return;
+  useEffect(() => {
+    if (!userId) return;
+    loadSavedContent(userId);
+  }, [userId]);
+
+  async function loadSavedContent(telegramId) {
+    if (!telegramId) return;
     try {
-      const allContent = await getAllGeneratedContent(state.user.id);
+      const allContent = await getAllGeneratedContent(telegramId);
       allContent.forEach(item => {
         if (item.content_type === 'first') {
           dispatch({ type: 'SET_GENERATED_CONTENT', payload: { type: 'first', data: item.content } });
@@ -301,11 +303,11 @@ export function MainScreen() {
     }
   }
 
-  function copyToClipboard(text) {
+  function copyToClipboard(text, id = 'default') {
     navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
+      setCopiedId(id);
       showToast('Copy ကူးပြီးပါပြီ');
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopiedId(null), 2000);
     });
   }
 
@@ -390,7 +392,7 @@ export function MainScreen() {
       {/* Content */}
       <div style={{ padding: 20, paddingBottom: 100 }}>
         {state.activeTab === 'intro' && (
-          <IntroTab content={content} copyToClipboard={copyToClipboard} copied={copied} />
+          <IntroTab content={content} copyToClipboard={copyToClipboard} copiedId={copiedId} />
         )}
         {state.activeTab === 'questions' && (
           <QuestionsTab
@@ -431,7 +433,7 @@ export function MainScreen() {
             onGenerate={generateMentorPrompt}
             onPayment={() => dispatch({ type: 'SET_SCREEN', payload: 'payment' })}
             copyToClipboard={copyToClipboard}
-            copied={copied}
+            copiedId={copiedId}
           />
         )}
       </div>
@@ -608,7 +610,7 @@ export function MainScreen() {
 
 // ===== SUB-COMPONENTS =====
 
-function IntroTab({ content, copyToClipboard, copied }) {
+function IntroTab({ content, copyToClipboard, copiedId }) {
   return (
     <div className="fade-in">
       {/* Self Introduction */}
@@ -621,10 +623,10 @@ function IntroTab({ content, copyToClipboard, copied }) {
           <button
             className="copy-btn"
             style={{ position: 'absolute', top: 12, right: 12 }}
-            onClick={() => copyToClipboard(content.selfIntro)}
+            onClick={() => copyToClipboard(content.selfIntro, 'intro')}
           >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-            {copied ? 'Copied' : 'Copy'}
+            {copiedId === 'intro' ? <Check size={14} /> : <Copy size={14} />}
+            {copiedId === 'intro' ? 'Copied' : 'Copy'}
           </button>
           <ContentRenderer content={content.selfIntro || content.raw} />
         </div>
@@ -1288,7 +1290,7 @@ function ExperiencesTab({ content, isPaid, generating, onGenerate, onPayment }) 
   );
 }
 
-function MentorTab({ content, isPaid, generating, onGenerate, onPayment, copyToClipboard, copied }) {
+function MentorTab({ content, isPaid, generating, onGenerate, onPayment, copyToClipboard, copiedId }) {
   if (!isPaid) {
     return (
       <div className="fade-in">
@@ -1352,10 +1354,10 @@ function MentorTab({ content, isPaid, generating, onGenerate, onPayment, copyToC
         <button
           className="copy-btn"
           style={{ position: 'absolute', top: 12, right: 12 }}
-          onClick={() => copyToClipboard(content)}
+          onClick={() => copyToClipboard(content, 'mentor')}
         >
-          {copied ? <Check size={14} /> : <Copy size={14} />}
-          {copied ? 'Copied' : 'Copy'}
+          {copiedId === 'mentor' ? <Check size={14} /> : <Copy size={14} />}
+          {copiedId === 'mentor' ? 'Copied' : 'Copy'}
         </button>
         <ContentRenderer content={content} />
       </div>

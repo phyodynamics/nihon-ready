@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { callGemini, buildFirstPrompt } from '../lib/gemini';
 import { saveOnboardingData, saveGeneratedContent, updateUser } from '../lib/database';
@@ -16,6 +16,11 @@ export function GeneratingScreen() {
   const { state, dispatch, showToast } = useApp();
   const [messageIndex, setMessageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -49,6 +54,8 @@ export function GeneratingScreen() {
       const prompt = buildFirstPrompt(state.onboardingData);
       const result = await callGemini(prompt);
 
+      if (!mountedRef.current) return;
+
       // Parse the result
       const parsedContent = parseFirstResult(result);
 
@@ -65,13 +72,18 @@ export function GeneratingScreen() {
 
       setProgress(100);
       setTimeout(() => {
-        dispatch({ type: 'SET_SCREEN', payload: 'main' });
+        if (mountedRef.current) {
+          dispatch({ type: 'SET_SCREEN', payload: 'main' });
+        }
       }, 500);
     } catch (error) {
+      if (!mountedRef.current) return;
       console.error('Generation error:', error);
       showToast('တစ်ခုခု မှားယွင်းနေပါသည်။ ထပ်ကြိုးစားပါ။', 'error');
       setTimeout(() => {
-        dispatch({ type: 'SET_SCREEN', payload: 'onboarding' });
+        if (mountedRef.current) {
+          dispatch({ type: 'SET_SCREEN', payload: 'onboarding' });
+        }
       }, 2000);
     }
   }
