@@ -1,80 +1,259 @@
-// Simple content renderer that handles markdown-like formatting
-// Converts raw AI text into clean, styled HTML sections
+// Content renderer that parses AI output into styled React elements
+// Includes TTS speak buttons for language blocks
+
+import { useState, useMemo, Fragment } from 'react';
+import { SpeakButton } from './SpeakButton';
+import { isTTSSupported } from '../lib/tts';
 
 export function ContentRenderer({ content, className = '' }) {
   if (!content) return null;
 
-  const html = renderContent(content);
+  const elements = useMemo(() => parseContent(content), [content]);
 
   return (
-    <div
-      className={`content-rendered ${className}`}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <div className={`content-rendered ${className}`}>
+      {elements}
+    </div>
   );
 }
 
-function renderContent(text) {
-  let html = escapeHtml(text);
+function parseContent(text) {
+  const lines = text.split('\n');
+  const elements = [];
+  let i = 0;
+  let key = 0;
 
-  // === SECTION HEADERS === (=== text ===)
-  html = html.replace(/^={3,}\s*(.+?)\s*={3,}$/gm, '<div class="section-header">$1</div>');
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
 
-  // ### Headers → section headers
-  html = html.replace(/^###\s+(.+)$/gm, '<div class="section-header">$1</div>');
-  // ## Headers
-  html = html.replace(/^##\s+(.+)$/gm, '<div class="section-header">$1</div>');
+    // Empty line
+    if (!trimmed) {
+      i++;
+      continue;
+    }
 
-  // QUESTION [N]: → question block
-  html = html.replace(/^QUESTION\s+(\d+):\s*(.+)$/gm, '<div class="q-header"><span class="q-number">Q$1</span> $2</div>');
+    // === SECTION HEADER ===
+    if (/^={3,}\s*(.+?)\s*={3,}$/.test(trimmed)) {
+      const match = trimmed.match(/^={3,}\s*(.+?)\s*={3,}$/);
+      elements.push(<div key={key++} className="section-header">{match[1]}</div>);
+      i++;
+      continue;
+    }
 
-  // ANSWER: label
-  html = html.replace(/^ANSWER:$/gm, '<div class="answer-label">Answer</div>');
+    // ### or ## Headers
+    if (/^#{2,3}\s+(.+)$/.test(trimmed)) {
+      const match = trimmed.match(/^#{2,3}\s+(.+)$/);
+      elements.push(<div key={key++} className="section-header">{match[1]}</div>);
+      i++;
+      continue;
+    }
 
-  // Key Vocabulary: label
-  html = html.replace(/^Key Vocabulary:$/gm, '<div class="vocab-label">Key Vocabulary</div>');
+    // QUESTION [N]: text
+    if (/^QUESTION\s+\[?(\d+)\]?:\s*(.+)$/i.test(trimmed)) {
+      const match = trimmed.match(/^QUESTION\s+\[?(\d+)\]?:\s*(.+)$/i);
+      elements.push(
+        <div key={key++} className="q-header">
+          <span className="q-number">Q{match[1]}</span> {match[2]}
+        </div>
+      );
+      i++;
+      continue;
+    }
 
-  // [Japanese] / [Romaji] / [Burmese Translation] section labels
-  html = html.replace(/^\[Japanese\]$/gm, '<div class="lang-label lang-jp">Japanese</div>');
-  html = html.replace(/^\[Romaji\]$/gm, '<div class="lang-label lang-ro">Romaji</div>');
-  html = html.replace(/^\[Burmese Translation\]$/gm, '<div class="lang-label lang-my">Burmese</div>');
-  html = html.replace(/^\[Burmese\]$/gm, '<div class="lang-label lang-my">Burmese</div>');
+    // ANSWER: label
+    if (/^ANSWER:$/i.test(trimmed)) {
+      elements.push(<div key={key++} className="answer-label">Answer</div>);
+      i++;
+      continue;
+    }
 
-  // Sentence N: label
-  html = html.replace(/^Sentence\s+(\d+):$/gm, '<div class="sentence-label">Sentence $1</div>');
+    // Key Vocabulary:
+    if (/^Key Vocabulary:$/i.test(trimmed)) {
+      elements.push(<div key={key++} className="vocab-label">Key Vocabulary</div>);
+      i++;
+      continue;
+    }
 
-  // Japanese: / Romaji: / Burmese: inline labels
-  html = html.replace(/^\s+Japanese:\s*(.+)$/gm, '<div class="lang-line"><span class="lang-tag jp">JP</span> $1</div>');
-  html = html.replace(/^\s+Romaji:\s*(.+)$/gm, '<div class="lang-line"><span class="lang-tag ro">RO</span> $1</div>');
-  html = html.replace(/^\s+Burmese:\s*(.+)$/gm, '<div class="lang-line"><span class="lang-tag my">MY</span> $1</div>');
+    // [Japanese] label — collect the block below it for TTS
+    if (/^\[Japanese\]$/i.test(trimmed)) {
+      const { block, endIndex } = collectBlock(lines, i + 1);
+      elements.push(
+        <LangBlock key={key++} label="Japanese" langClass="lang-jp" lang="ja-JP" text={block} />
+      );
+      i = endIndex;
+      continue;
+    }
 
-  // **bold text** → strong
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // [Romaji] label
+    if (/^\[Romaji\]$/i.test(trimmed)) {
+      const { block, endIndex } = collectBlock(lines, i + 1);
+      elements.push(
+        <LangBlock key={key++} label="Romaji" langClass="lang-ro" lang="en-US" text={block} />
+      );
+      i = endIndex;
+      continue;
+    }
 
-  // *italic* → em (but not inside already processed tags)
-  html = html.replace(/(?<!\w)\*([^*\n]+?)\*(?!\w)/g, '<em>$1</em>');
+    // [Burmese Translation] or [Burmese] label
+    if (/^\[Burmese( Translation)?\]$/i.test(trimmed)) {
+      const { block, endIndex } = collectBlock(lines, i + 1);
+      elements.push(
+        <LangBlock key={key++} label="Burmese" langClass="lang-my" lang="my-MM" text={block} />
+      );
+      i = endIndex;
+      continue;
+    }
 
-  // Numbered list items: 1. text
-  html = html.replace(/^(\d+)\.\s+(.+)$/gm, '<div class="list-item"><span class="list-num">$1.</span> $2</div>');
+    // Sentence N: label
+    if (/^Sentence\s+(\d+):$/i.test(trimmed)) {
+      const match = trimmed.match(/^Sentence\s+(\d+):$/i);
+      elements.push(<div key={key++} className="sentence-label">Sentence {match[1]}</div>);
+      i++;
+      continue;
+    }
 
-  // Bullet points: - text
-  html = html.replace(/^-\s+(.+)$/gm, '<div class="bullet-item">$1</div>');
+    // Japanese: / Romaji: / Burmese: inline labels with TTS
+    if (/^\s+Japanese:\s*(.+)$/.test(line)) {
+      const match = line.match(/^\s+Japanese:\s*(.+)$/);
+      elements.push(
+        <LangLine key={key++} tag="JP" tagClass="jp" lang="ja-JP" text={match[1]} />
+      );
+      i++;
+      continue;
+    }
+    if (/^\s+Romaji:\s*(.+)$/.test(line)) {
+      const match = line.match(/^\s+Romaji:\s*(.+)$/);
+      elements.push(
+        <LangLine key={key++} tag="RO" tagClass="ro" lang="en-US" text={match[1]} />
+      );
+      i++;
+      continue;
+    }
+    if (/^\s+Burmese:\s*(.+)$/.test(line)) {
+      const match = line.match(/^\s+Burmese:\s*(.+)$/);
+      elements.push(
+        <LangLine key={key++} tag="MY" tagClass="my" lang="my-MM" text={match[1]} />
+      );
+      i++;
+      continue;
+    }
 
-  // Horizontal rules ---
-  html = html.replace(/^-{3,}$/gm, '<hr class="content-divider" />');
+    // --- Horizontal rule
+    if (/^-{3,}$/.test(trimmed)) {
+      elements.push(<hr key={key++} className="content-divider" />);
+      i++;
+      continue;
+    }
 
-  // Line breaks
-  html = html.replace(/\n/g, '<br />');
+    // Numbered list: 1. text
+    if (/^(\d+)\.\s+(.+)$/.test(trimmed)) {
+      const match = trimmed.match(/^(\d+)\.\s+(.+)$/);
+      elements.push(
+        <div key={key++} className="list-item">
+          <span className="list-num">{match[1]}.</span> {formatInline(match[2])}
+        </div>
+      );
+      i++;
+      continue;
+    }
 
-  // Clean up excessive <br /> tags
-  html = html.replace(/(<br \/>){3,}/g, '<br /><br />');
+    // Bullet: - text
+    if (/^-\s+(.+)$/.test(trimmed)) {
+      const match = trimmed.match(/^-\s+(.+)$/);
+      elements.push(
+        <div key={key++} className="bullet-item">{formatInline(match[1])}</div>
+      );
+      i++;
+      continue;
+    }
 
-  return html;
+    // Default: regular text line
+    elements.push(
+      <div key={key++} style={{ marginBottom: 2 }}>{formatInline(trimmed)}</div>
+    );
+    i++;
+  }
+
+  return elements;
 }
 
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+// Collect text block until next label or section marker
+function collectBlock(lines, startIndex) {
+  let block = '';
+  let i = startIndex;
+  while (i < lines.length) {
+    const trimmed = lines[i].trim();
+    // Stop at section markers, labels, etc.
+    if (
+      /^={3,}/.test(trimmed) ||
+      /^\[.+\]$/.test(trimmed) ||
+      /^QUESTION/i.test(trimmed) ||
+      /^ANSWER:/i.test(trimmed) ||
+      /^Key Vocabulary:/i.test(trimmed) ||
+      /^Sentence\s+\d+:/i.test(trimmed) ||
+      /^#{2,3}\s+/.test(trimmed)
+    ) {
+      break;
+    }
+    if (trimmed) {
+      block += (block ? '\n' : '') + trimmed;
+    }
+    i++;
+  }
+  return { block: block.trim(), endIndex: i };
+}
+
+// Format inline text (bold, italic)
+function formatInline(text) {
+  if (!text) return text;
+  
+  // Split by **bold** and *italic* patterns
+  const parts = [];
+  let remaining = text;
+  let partKey = 0;
+  
+  while (remaining.length > 0) {
+    // Bold
+    const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+    if (boldMatch) {
+      const idx = remaining.indexOf(boldMatch[0]);
+      if (idx > 0) parts.push(<Fragment key={partKey++}>{remaining.slice(0, idx)}</Fragment>);
+      parts.push(<strong key={partKey++}>{boldMatch[1]}</strong>);
+      remaining = remaining.slice(idx + boldMatch[0].length);
+      continue;
+    }
+    
+    // No more patterns
+    parts.push(<Fragment key={partKey++}>{remaining}</Fragment>);
+    break;
+  }
+  
+  return parts.length === 1 ? parts[0] : parts;
+}
+
+// Language block with label + speak button
+function LangBlock({ label, langClass, lang, text }) {
+  if (!text) return null;
+  
+  return (
+    <div className="lang-block" style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <span className={`lang-label ${langClass}`}>{label}</span>
+        {isTTSSupported() && <SpeakButton text={text} lang={lang} size="sm" />}
+      </div>
+      <div style={{ lineHeight: 1.8, paddingLeft: 4 }}>{text}</div>
+    </div>
+  );
+}
+
+// Inline language line with tag + speak button
+function LangLine({ tag, tagClass, lang, text }) {
+  return (
+    <div className="lang-line">
+      <span className={`lang-tag ${tagClass}`}>{tag}</span>
+      <span style={{ flex: 1 }}>{text}</span>
+      {isTTSSupported() && <SpeakButton text={text} lang={lang} size="sm" />}
+    </div>
+  );
 }

@@ -11,7 +11,11 @@ import { GeneratingScreen } from './components/GeneratingScreen';
 import { MainScreen } from './components/MainScreen';
 import { PaymentScreen } from './components/PaymentScreen';
 import { AdminDashboard } from './components/AdminDashboard';
+import { preloadVoices } from './lib/tts';
 import './index.css';
+
+// Preload TTS voices
+preloadVoices();
 
 function AppContent() {
   const { state, dispatch, showToast } = useApp();
