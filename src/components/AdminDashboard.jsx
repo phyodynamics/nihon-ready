@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { getAllUsers, getAllPayments, getAnalytics, updatePaymentStatus, updateUser } from '../lib/database';
+import { getAllUsers, getAllPayments, getAnalytics, updatePaymentStatus, updateUser, createPayment } from '../lib/database';
 import { notifyAdmin } from '../lib/telegram';
 import {
   Users, CreditCard, BarChart3, Settings,
@@ -78,7 +78,26 @@ export function AdminDashboard() {
 
   async function toggleUserPaid(user) {
     try {
-      await updateUser(user.telegram_id, { is_paid: !user.is_paid });
+      const newPaidStatus = !user.is_paid;
+      await updateUser(user.telegram_id, { is_paid: newPaidStatus });
+
+      // When admin unlocks a user, create an approved payment record for revenue tracking
+      if (newPaidStatus) {
+        const onboardingCount = user.onboarding_count || 0;
+        const amount = onboardingCount >= 2 ? 15000 : 30000;
+        const paymentType = onboardingCount >= 2 ? 'extra_onboarding' : 'unlock';
+
+        await createPayment(user.telegram_id, amount, paymentType);
+        // Immediately approve the payment we just created
+        const allPayments = await getAllPayments();
+        const latestPayment = allPayments.find(
+          p => p.telegram_id === user.telegram_id && p.status === 'pending'
+        );
+        if (latestPayment) {
+          await updatePaymentStatus(latestPayment.id, 'approved');
+        }
+      }
+
       showToast(user.is_paid ? 'User Locked' : 'User Unlocked');
       loadData();
     } catch (error) {
