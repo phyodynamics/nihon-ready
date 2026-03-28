@@ -442,9 +442,11 @@ export function MainScreen() {
       {/* Restart Onboarding Confirmation */}
       {showRestartConfirm && (() => {
         const onboardingCount = state.dbUser?.onboarding_count || 0;
-        const canFreeRestart = isPaid && onboardingCount < 2;
+        // Unpaid users can always redo onboarding (first content is free)
+        // Paid users get 2 free restarts, then need to pay 15,000 each
         const needsExtraPayment = isPaid && onboardingCount >= 2;
-        const freeRemaining = Math.max(0, 2 - onboardingCount);
+        const canFreeRestart = !needsExtraPayment;
+        const freeRemaining = isPaid ? Math.max(0, 2 - onboardingCount) : null;
 
         return (
           <div style={{
@@ -470,15 +472,7 @@ export function MainScreen() {
                 <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
                   အချက်အလက်များကို ပြန်လည်ရေးသွင်းမလား?
                 </h3>
-                {canFreeRestart ? (
-                  <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
-                    အချက်အလက် အသစ်များကို အသုံးပြု၍ Interview Content အသစ်များကို ထပ်မံဖန်တီးနိုင်ပါသည်။
-                    <br />
-                    <span style={{ fontWeight: 600, color: 'var(--black)' }}>
-                      သင့်အနေဖြင့် အခမဲ့ {freeRemaining} ကြိမ် ထပ်မံ ပြုလုပ်ခွင့် ကျန်ရှိပါသေးသည်။
-                    </span>
-                  </p>
-                ) : needsExtraPayment ? (
+                {needsExtraPayment ? (
                   <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
                     ခွင့်ပြုထားသော အခမဲ့ ၂ ကြိမ် ပြည့်သွားပါပြီ။ ထပ်မံပြုလုပ်လိုပါက
                     <br />
@@ -490,7 +484,15 @@ export function MainScreen() {
                   </p>
                 ) : (
                   <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
-                    Content အပြည့်အစုံကို ရယူအသုံးပြုနိုင်ရန် Payment အရင်ပေးချေရန် လိုအပ်ပါသည်။
+                    အချက်အလက် အသစ်များကို အသုံးပြု၍ Interview Content အသစ်များကို ထပ်မံဖန်တီးနိုင်ပါသည်။
+                    {freeRemaining !== null && (
+                      <>
+                        <br />
+                        <span style={{ fontWeight: 600, color: 'var(--black)' }}>
+                          သင့်အနေဖြင့် အခမဲ့ {freeRemaining} ကြိမ် ထပ်မံ ပြုလုပ်ခွင့် ကျန်ရှိပါသေးသည်။
+                        </span>
+                      </>
+                    )}
                   </p>
                 )}
               </div>
@@ -525,7 +527,7 @@ export function MainScreen() {
                     }}
                   >
                     <CreditCard size={16} />
-                    {needsExtraPayment ? 'Payment ပေးချေမည်' : 'Unlock လုပ်ရန်'}
+                    Payment ပေးချေမည်
                   </button>
                 )}
               </div>
