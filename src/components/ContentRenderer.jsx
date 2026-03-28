@@ -95,11 +95,11 @@ function parseContent(text) {
       continue;
     }
 
-    // [Burmese Translation] or [Burmese] label
+    // [Burmese Translation] or [Burmese] label — no TTS
     if (/^\[Burmese( Translation)?\]$/i.test(trimmed)) {
       const { block, endIndex } = collectBlock(lines, i + 1);
       elements.push(
-        <LangBlock key={key++} label="Burmese" langClass="lang-my" lang="my-MM" text={block} />
+        <LangBlock key={key++} label="Burmese" langClass="lang-my" lang="my-MM" text={block} noTTS />
       );
       i = endIndex;
       continue;
@@ -133,7 +133,7 @@ function parseContent(text) {
     if (/^\s+Burmese:\s*(.+)$/.test(line)) {
       const match = line.match(/^\s+Burmese:\s*(.+)$/);
       elements.push(
-        <LangLine key={key++} tag="MY" tagClass="my" lang="my-MM" text={match[1]} />
+        <LangLine key={key++} tag="MY" tagClass="my" lang="my-MM" text={match[1]} noTTS />
       );
       i++;
       continue;

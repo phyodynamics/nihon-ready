@@ -1208,6 +1208,7 @@ textarea.input-field {
   color: var(--gray-700);
 }
 
+.section-header,
 .content-rendered .section-header {
   font-size: 15px;
   font-weight: 700;

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { callGemini, buildSecondPrompt, buildThirdPrompt, buildMentorPrompt } from '../lib/gemini';
+import { callGemini, buildSecondPrompt, buildThirdPrompt, buildMentorPrompt, buildTestQuestionsPrompt, buildTestEvaluatePrompt } from '../lib/gemini';
 import { saveGeneratedContent, getGeneratedContent, getAllGeneratedContent } from '../lib/database';
 import { sendTelegramFile } from '../lib/telegram';
 import { ContentRenderer } from './ContentRenderer';
 import {
-  BookOpen, MessageSquare, BriefcaseBusiness, Brain,
+  BookOpen, MessageSquare, BriefcaseBusiness, Brain, ClipboardCheck,
   Lock, ChevronDown, ChevronUp, Copy, Check,
-  Download, RefreshCw, CreditCard, Settings, User, RotateCcw
+  Download, RefreshCw, CreditCard, Settings, User, RotateCcw, ArrowRight, Send
 } from 'lucide-react';
 
 function UserProfileCard({ user, isPaid }) {
@@ -311,6 +311,7 @@ export function MainScreen() {
   const tabs = [
     { id: 'intro', label: 'မိတ်ဆက်', icon: <BookOpen size={16} /> },
     { id: 'questions', label: 'မေးခွန်းများ', icon: <MessageSquare size={16} /> },
+    { id: 'test', label: 'Test', icon: <ClipboardCheck size={16} /> },
     { id: 'experiences', label: 'အတွေ့အကြုံ', icon: <BriefcaseBusiness size={16} /> },
     { id: 'mentor', label: 'AI Mentor', icon: <Brain size={16} /> },
   ];
@@ -401,6 +402,15 @@ export function MainScreen() {
             onPayment={() => dispatch({ type: 'SET_SCREEN', payload: 'payment' })}
             expandedAnswer={expandedAnswer}
             setExpandedAnswer={setExpandedAnswer}
+          />
+        )}
+        {state.activeTab === 'test' && (
+          <InterviewTestTab
+            content={content}
+            isPaid={isPaid}
+            onPayment={() => dispatch({ type: 'SET_SCREEN', payload: 'payment' })}
+            userData={state.onboardingData}
+            showToast={showToast}
           />
         )}
         {state.activeTab === 'experiences' && (
@@ -707,28 +717,319 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
   );
 }
 
+function InterviewTestTab({ content, isPaid, onPayment, userData, showToast }) {
+  const [testState, setTestState] = useState('idle'); // idle, loading, testing, submitting, results
+  const [testQuestions, setTestQuestions] = useState([]);
+  const [currentQ, setCurrentQ] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const [results, setResults] = useState(null);
+
+  if (!isPaid) {
+    return (
+      <div className="fade-in">
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, color: 'var(--gray-600)', lineHeight: 1.8 }}>
+            <div className="section-header" style={{ marginBottom: 8 }}>Interview Test Mode</div>
+            <p>မေးခွန်း ၄၅ ခုထဲမှ ကျပန်း ၁၀ ခုကို ရွေးထုတ်ပြီး...</p>
+            <p style={{ opacity: 0.5 }}>သင့်ရဲ့ အဖြေများကို AI က စစ်ဆေးအမှတ်ပေးပါမည်...</p>
+          </div>
+        </div>
+        <div className="lock-content" style={{ padding: 24 }}>
+          <div className="lock-icon"><Lock /></div>
+          <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Interview Test Mode ကို အသုံးပြုရန်</p>
+          <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>
+            ကျပန်းမေးခွန်း ၁၀ ခုဖြေဆိုပြီး AI အကဲဖြတ်ချက် ရယူပါ
+          </p>
+          <button className="btn btn-primary btn-full" onClick={onPayment}>
+            <Lock size={16} />
+            Payment ပေးချေ၍ ရယူရန်
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  async function startTest() {
+    setTestState('loading');
+    try {
+      const prompt = buildTestQuestionsPrompt(content.questions || []);
+      const result = await callGemini(prompt);
+
+      // Parse the 10 questions from result
+      const lines = result.split('\n').filter(l => /^\d+\.\s/.test(l.trim()));
+      const parsed = lines.slice(0, 10).map(line => {
+        const cleaned = line.replace(/^\d+\.\s*/, '').trim();
+        const parts = cleaned.split(' / ');
+        return {
+          japanese: parts[0] || cleaned,
+          burmese: parts[1] || '',
+        };
+      });
+
+      if (parsed.length === 0) {
+        throw new Error('No questions parsed');
+      }
+
+      setTestQuestions(parsed);
+      setAnswers(parsed.map(() => ({ japaneseAnswer: '', burmeseAnswer: '' })));
+      setCurrentQ(0);
+      setTestState('testing');
+    } catch (error) {
+      console.error('Test start error:', error);
+      showToast('Test မေးခွန်းများ ရယူ၍မရပါ', 'error');
+      setTestState('idle');
+    }
+  }
+
+  async function submitTest() {
+    setTestState('submitting');
+    try {
+      const testData = testQuestions.map((q, i) => ({
+        question: `${q.japanese} / ${q.burmese}`,
+        japaneseAnswer: answers[i]?.japaneseAnswer || '',
+        burmeseAnswer: answers[i]?.burmeseAnswer || '',
+      }));
+
+      const prompt = buildTestEvaluatePrompt(userData, testData);
+      const result = await callGemini(prompt);
+      setResults(result);
+      setTestState('results');
+    } catch (error) {
+      console.error('Evaluate error:', error);
+      showToast('အကဲဖြတ်ချက် ရယူ၍မရပါ', 'error');
+      setTestState('testing');
+    }
+  }
+
+  function updateAnswer(field, value) {
+    setAnswers(prev => {
+      const updated = [...prev];
+      updated[currentQ] = { ...updated[currentQ], [field]: value };
+      return updated;
+    });
+  }
+
+  // IDLE state
+  if (testState === 'idle') {
+    return (
+      <div className="fade-in text-center" style={{ padding: '40px 0' }}>
+        <ClipboardCheck size={48} style={{ color: 'var(--gray-300)', marginBottom: 16 }} />
+        <h3 style={{ marginBottom: 8, fontSize: 18, fontWeight: 600 }}>Interview Test Mode</h3>
+        <p style={{ fontSize: 14, color: 'var(--gray-500)', marginBottom: 8, lineHeight: 1.6 }}>
+          မေးခွန်း ၄၅ ခုထဲမှ ကျပန်း ၁၀ ခုကို ရွေးထုတ်ပြီး
+          <br />သင့်အဖြေများကို AI က စစ်ဆေးအမှတ်ပေးပါမည်
+        </p>
+        <p style={{ fontSize: 13, color: 'var(--gray-400)', marginBottom: 24 }}>
+          မြန်မာလို နှင့် ဂျပန်လို ၂ မျိုးလုံး ဖြေဆိုနိုင်ပါသည်
+        </p>
+        <button className="btn btn-accent btn-lg" onClick={startTest}>
+          <ClipboardCheck size={18} />
+          Test စတင်ရန်
+        </button>
+      </div>
+    );
+  }
+
+  // LOADING state
+  if (testState === 'loading') {
+    return (
+      <div className="fade-in text-center" style={{ padding: '60px 0' }}>
+        <div className="loading-spinner" style={{ marginBottom: 16 }}></div>
+        <p style={{ color: 'var(--gray-500)' }}>မေးခွန်း ၁၀ ခု ရွေးထုတ်နေပါသည်...</p>
+      </div>
+    );
+  }
+
+  // SUBMITTING state
+  if (testState === 'submitting') {
+    return (
+      <div className="fade-in text-center" style={{ padding: '60px 0' }}>
+        <div className="loading-spinner" style={{ marginBottom: 16 }}></div>
+        <p style={{ color: 'var(--gray-500)' }}>သင့်အဖြေများကို စစ်ဆေးနေပါသည်...</p>
+      </div>
+    );
+  }
+
+  // RESULTS state
+  if (testState === 'results') {
+    return (
+      <div className="fade-in">
+        <div className="card card-elevated">
+          <ContentRenderer content={results} />
+        </div>
+        <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
+          <button
+            className="btn btn-outline"
+            style={{ flex: 1 }}
+            onClick={() => { setTestState('idle'); setResults(null); setTestQuestions([]); }}
+          >
+            <RotateCcw size={16} />
+            နောက်တစ်ကြိမ် ထပ်လုပ်ရန်
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // TESTING state
+  const q = testQuestions[currentQ];
+  const isLast = currentQ === testQuestions.length - 1;
+  const answeredCount = answers.filter(a => a.japaneseAnswer.trim() || a.burmeseAnswer.trim()).length;
+
+  return (
+    <div className="fade-in">
+      {/* Progress */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13, color: 'var(--gray-500)' }}>
+          <span>မေးခွန်း {currentQ + 1} / {testQuestions.length}</span>
+          <span>ဖြေပြီး {answeredCount} / {testQuestions.length}</span>
+        </div>
+        <div className="progress-bar">
+          <div className="progress-fill" style={{ width: `${((currentQ + 1) / testQuestions.length) * 100}%` }}></div>
+        </div>
+      </div>
+
+      {/* Question */}
+      <div className="card card-elevated" style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <span style={{
+            background: 'var(--black)',
+            color: 'var(--white)',
+            width: 28, height: 28,
+            borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, fontWeight: 700, flexShrink: 0
+          }}>
+            {currentQ + 1}
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--gray-400)', textTransform: 'uppercase' }}>
+            Interview Question
+          </span>
+        </div>
+        <p style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.7, marginBottom: 6 }}>
+          {q.japanese}
+        </p>
+        {q.burmese && (
+          <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
+            {q.burmese}
+          </p>
+        )}
+      </div>
+
+      {/* Answer fields */}
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--gray-600)' }}>
+          🇯🇵 ဂျပန်လို အဖြေ
+        </label>
+        <textarea
+          className="input-field"
+          style={{ minHeight: 80, resize: 'vertical', fontFamily: 'inherit' }}
+          placeholder="日本語で答えてください..."
+          value={answers[currentQ]?.japaneseAnswer || ''}
+          onChange={(e) => updateAnswer('japaneseAnswer', e.target.value)}
+        />
+      </div>
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--gray-600)' }}>
+          🇲🇲 မြန်မာလို အဖြေ
+        </label>
+        <textarea
+          className="input-field"
+          style={{ minHeight: 80, resize: 'vertical', fontFamily: 'inherit' }}
+          placeholder="မြန်မာလိုဖြေပါ..."
+          value={answers[currentQ]?.burmeseAnswer || ''}
+          onChange={(e) => updateAnswer('burmeseAnswer', e.target.value)}
+        />
+      </div>
+
+      {/* Navigation */}
+      <div style={{ display: 'flex', gap: 10 }}>
+        {currentQ > 0 && (
+          <button
+            className="btn btn-outline"
+            onClick={() => setCurrentQ(prev => prev - 1)}
+          >
+            နောက်သို့
+          </button>
+        )}
+        {!isLast ? (
+          <button
+            className="btn btn-primary"
+            style={{ flex: 1 }}
+            onClick={() => setCurrentQ(prev => prev + 1)}
+          >
+            ရှေ့ဆက်ရန်
+            <ArrowRight size={16} />
+          </button>
+        ) : (
+          <button
+            className="btn btn-accent"
+            style={{ flex: 1 }}
+            onClick={submitTest}
+          >
+            <Send size={16} />
+            အဖြေများ တင်သွင်းရန် ({answeredCount}/10)
+          </button>
+        )}
+      </div>
+
+      {/* Quick nav dots */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 16 }}>
+        {testQuestions.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrentQ(i)}
+            style={{
+              width: 8, height: 8,
+              borderRadius: '50%',
+              border: 'none',
+              cursor: 'pointer',
+              background: i === currentQ ? 'var(--black)' :
+                (answers[i]?.japaneseAnswer?.trim() || answers[i]?.burmeseAnswer?.trim()) ? 'var(--gray-400)' : 'var(--gray-200)',
+              transition: 'all 0.2s ease',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ExperiencesTab({ content, isPaid, generating, onGenerate, onPayment }) {
   if (!isPaid) {
     return (
       <div className="fade-in">
-        <div style={{ position: 'relative', marginTop: 16 }}>
-          <div className="lock-overlay" style={{ maxHeight: 300 }}>
-            <div className="card" style={{ opacity: 0.15 }}>
-              <h3 style={{ marginBottom: 12 }}>လုပ်ငန်းခွင် အတွေ့အကြုံ</h3>
-              <p>ဂျပန်လုပ်ငန်းခွင်တွင် ကြုံတွေ့ရမည့် အခက်အခဲများ...</p>
-              <p>Ho-Ren-So (報連相) - Report, Contact, Consult...</p>
-              <p>Aisatsu (挨拶) - Greeting etiquette...</p>
-            </div>
+        {/* Teaser content */}
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, color: 'var(--gray-600)', lineHeight: 1.8 }}>
+            <div className="section-header" style={{ marginBottom: 8 }}>Interview တွင် လိုက်နာရမည့် Manners များ</div>
+            <p>- ဝတ်ဆင်ရမည့် အဝတ်အစား (suit, tie, shoes, bag)</p>
+            <p>- Interview room ထဲဝင်နည်း (shitsurei shimasu / 失礼します)</p>
+            <p>- ဦးညွတ်ခြင်း (Ojigi / お辞儀) - 15°, 30°, 45° ...</p>
           </div>
-          <div className="lock-content">
+        </div>
+        <div className="card" style={{ marginBottom: 16, opacity: 0.5 }}>
+          <div style={{ fontSize: 14, color: 'var(--gray-600)', lineHeight: 1.8 }}>
+            <div className="section-header" style={{ marginBottom: 8 }}>နေ့စဉ်လုပ်ငန်းတာဝန်များ</div>
+            <p>- Morning meeting (朝礼)...</p>
+            <p>- ဂျပန်လုပ်ငန်းခွင် ကျင့်ဝတ်...</p>
+          </div>
+        </div>
+        <div className="card" style={{ marginBottom: 16, opacity: 0.3 }}>
+          <p>- Ho-Ren-So (報連相)...</p>
+          <p>- ဂျပန်နေထိုင်ရေး...</p>
+          <p>- Career Growth Path...</p>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <div className="lock-content" style={{ padding: 24 }}>
             <div className="lock-icon"><Lock /></div>
-            <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>အပြည့်အစုံကို ရယူရန်</p>
+            <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>ကျန်ရှိ Section ၈ ခုလုံးကို အပြည့်အစုံ ဖတ်ရန်</p>
             <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>
-              အလုပ်အတွေ့အကြုံများ၊ စိတ်နေစိတ်ထား နှင့် မဖြစ်မနေသိထားရမည့် Manners များ
+              Interview Manners၊ နေ့စဉ်လုပ်ငန်း၊ Manners၊ နေထိုင်ရေး၊ စိတ်ဓာတ်ခွန်အား၊ ဆက်ဆံရေး၊ Career Growth
             </p>
             <button className="btn btn-primary btn-full" onClick={onPayment}>
               <Lock size={16} />
-              Payment ပေးချေ၍ ရယူပါ
+              Payment ပေးချေ၍ အပြည့်အစုံဖတ်ရန်
             </button>
           </div>
         </div>
@@ -778,23 +1079,24 @@ function MentorTab({ content, isPaid, generating, onGenerate, onPayment, copyToC
   if (!isPaid) {
     return (
       <div className="fade-in">
-        <div style={{ position: 'relative', marginTop: 16 }}>
-          <div className="lock-overlay" style={{ maxHeight: 300 }}>
-            <div className="card" style={{ opacity: 0.15 }}>
-              <h3 style={{ marginBottom: 12 }}>AI Master Prompt</h3>
-              <p>From now on, act as my dedicated Career Mentor...</p>
-              <p>Your Persona: You are a friendly, highly practical...</p>
-            </div>
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, color: 'var(--gray-600)', lineHeight: 1.8 }}>
+            <div className="section-header" style={{ marginBottom: 8 }}>AI Master Prompt</div>
+            <p>ChatGPT / Gemini တွင် Copy-Paste လုပ်ရုံဖြင့် သင့်ကိုယ်ပိုင် AI Mentor ရယူနိုင်ပါသည်</p>
+            <p style={{ marginTop: 8, opacity: 0.5 }}>"From now on, act as my dedicated Career Mentor, 'Senpai'..."</p>
+            <p style={{ opacity: 0.3 }}>"WORKPLACE PROBLEM SOLVING, LANGUAGE & COMMUNICATION..."</p>
           </div>
-          <div className="lock-content">
+        </div>
+        <div style={{ position: 'relative' }}>
+          <div className="lock-content" style={{ padding: 24 }}>
             <div className="lock-icon"><Lock /></div>
-            <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Unlock လုပ်ရန်</p>
+            <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>ကိုယ်ပိုင် AI Mentor Prompt ရယူရန်</p>
             <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>
-              AI Master Prompt ရယူရန်
+              ChatGPT / Gemini တွင် 24/7 အကူအညီယူနိုင်မည့် ကိုယ်ပိုင် Mentor
             </p>
             <button className="btn btn-primary btn-full" onClick={onPayment}>
               <Lock size={16} />
-              Payment ချေ၍ Unlock လုပ်ရန်
+              Payment ပေးချေ၍ ရယူရန်
             </button>
           </div>
         </div>
