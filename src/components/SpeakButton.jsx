@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Volume2, Square } from 'lucide-react';
-import { speak, stop, subscribeTTS, isTTSSupported, isLangSupported, getCurrentId } from '../lib/tts';
+import { speak, stop, subscribeTTS, isTTSSupported, getCurrentId } from '../lib/tts';
 
 // Compact speak button for inline use next to text blocks
 export function SpeakButton({ text, lang, size = 'sm', label }) {
@@ -30,8 +30,7 @@ export function SpeakButton({ text, lang, size = 'sm', label }) {
     }
   }, [text, lang, playing]);
 
-  // Don't render if TTS not supported or language has no voice  
-  if (!isTTSSupported() || !isLangSupported(lang)) return null;
+  if (!isTTSSupported()) return null;
 
   const isSmall = size === 'sm';
   

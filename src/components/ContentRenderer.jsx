@@ -85,11 +85,11 @@ function parseContent(text) {
       continue;
     }
 
-    // [Romaji] label
+    // [Romaji] label — no TTS
     if (/^\[Romaji\]$/i.test(trimmed)) {
       const { block, endIndex } = collectBlock(lines, i + 1);
       elements.push(
-        <LangBlock key={key++} label="Romaji" langClass="lang-ro" lang="en-US" text={block} />
+        <LangBlock key={key++} label="Romaji" langClass="lang-ro" lang="en-US" text={block} noTTS />
       );
       i = endIndex;
       continue;
@@ -125,7 +125,7 @@ function parseContent(text) {
     if (/^\s+Romaji:\s*(.+)$/.test(line)) {
       const match = line.match(/^\s+Romaji:\s*(.+)$/);
       elements.push(
-        <LangLine key={key++} tag="RO" tagClass="ro" lang="en-US" text={match[1]} />
+        <LangLine key={key++} tag="RO" tagClass="ro" lang="en-US" text={match[1]} noTTS />
       );
       i++;
       continue;
@@ -233,9 +233,9 @@ function formatInline(text) {
 }
 
 // Language block with label + speak button
-function LangBlock({ label, langClass, lang, text }) {
+function LangBlock({ label, langClass, lang, text, noTTS }) {
   if (!text) return null;
-  const showSpeak = isTTSSupported() && isLangSupported(lang);
+  const showSpeak = !noTTS && isTTSSupported();
   
   return (
     <div className="lang-block" style={{ marginBottom: 12 }}>
@@ -249,8 +249,8 @@ function LangBlock({ label, langClass, lang, text }) {
 }
 
 // Inline language line with tag + speak button
-function LangLine({ tag, tagClass, lang, text }) {
-  const showSpeak = isTTSSupported() && isLangSupported(lang);
+function LangLine({ tag, tagClass, lang, text, noTTS }) {
+  const showSpeak = !noTTS && isTTSSupported();
   return (
     <div className="lang-line">
       <span className={`lang-tag ${tagClass}`}>{tag}</span>
