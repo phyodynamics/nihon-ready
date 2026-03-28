@@ -44,16 +44,32 @@ export function AdminDashboard() {
   async function handleApprovePayment(payment) {
     try {
       await updatePaymentStatus(payment.id, 'approved');
-      await updateUser(payment.telegram_id, { is_paid: true });
+
+      const updateData = { is_paid: true };
+
+      // For extra onboarding payments, decrement onboarding_count to grant one more restart
+      if (payment.payment_type === 'extra_onboarding') {
+        const user = users.find(u => u.telegram_id === payment.telegram_id);
+        const currentCount = user?.onboarding_count || 0;
+        if (currentCount > 0) {
+          updateData.onboarding_count = currentCount - 1;
+        }
+      }
+
+      await updateUser(payment.telegram_id, updateData);
 
       // Notify user via proxy
+      const message = payment.payment_type === 'extra_onboarding'
+        ? '🎉 Extra Onboarding Payment ကို အတည်ပြုပြီးပါပြီ။ Onboarding ကို ပြန်လည်ပြုလုပ်နိုင်ပါပြီ။'
+        : '🎉 သင့်ရဲ့ Payment ကို အတည်ပြုပြီးပါပြီ။ Nihon Ready App ထဲမှာ Content အားလုံးကို ယခု Unlock ဖြစ်ပါပြီ။';
+
       await fetch('/api/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'sendMessage',
           chat_id: payment.telegram_id,
-          text: '🎉 သင့်ရဲ့ Payment ကို အတည်ပြုပြီးပါပြီ။ Nihon Ready App ထဲမှာ Content အားလုံးကို ယခု Unlock ဖြစ်ပါပြီ။'
+          text: message
         })
       });
 
@@ -79,13 +95,20 @@ export function AdminDashboard() {
   async function toggleUserPaid(user) {
     try {
       const newPaidStatus = !user.is_paid;
-      await updateUser(user.telegram_id, { is_paid: newPaidStatus });
+      const updateData = { is_paid: newPaidStatus };
 
       // When admin unlocks a user, create an approved payment record for revenue tracking
       if (newPaidStatus) {
         const onboardingCount = user.onboarding_count || 0;
         const amount = onboardingCount >= 2 ? 15000 : 30000;
         const paymentType = onboardingCount >= 2 ? 'extra_onboarding' : 'unlock';
+
+        // For extra onboarding, decrement count to grant one more restart
+        if (paymentType === 'extra_onboarding' && onboardingCount > 0) {
+          updateData.onboarding_count = onboardingCount - 1;
+        }
+
+        await updateUser(user.telegram_id, updateData);
 
         await createPayment(user.telegram_id, amount, paymentType);
         // Immediately approve the payment we just created
@@ -96,6 +119,8 @@ export function AdminDashboard() {
         if (latestPayment) {
           await updatePaymentStatus(latestPayment.id, 'approved');
         }
+      } else {
+        await updateUser(user.telegram_id, updateData);
       }
 
       showToast(user.is_paid ? 'User Locked' : 'User Unlocked');

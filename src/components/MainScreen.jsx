@@ -467,38 +467,41 @@ export function MainScreen() {
               <div style={{
                 background: 'var(--white)',
                 borderRadius: 16,
-                padding: 24,
-                maxWidth: 340,
-                width: '100%',
+                padding: 20,
+                maxWidth: 320,
+                width: 'calc(100% - 40px)',
+                maxHeight: 'calc(100vh - 80px)',
+                overflowY: 'auto',
                 boxShadow: 'var(--shadow-lg)',
+                boxSizing: 'border-box',
               }}>
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                  <Lock size={36} style={{ color: 'var(--gray-400)', marginBottom: 12 }} />
-                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
-                    Onboarding ပြန်လုပ်ရန် Payment လိုအပ်ပါသည်
+                  <Lock size={32} style={{ color: 'var(--gray-400)', marginBottom: 10 }} />
+                  <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+                    Payment လိုအပ်ပါသည်
                   </h3>
-                  <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
-                    Content အပြည့်အစုံ ရယူပြီးမှသာ Onboarding ကို ပြန်လည်ပြုလုပ်နိုင်ပါသည်။
+                  <p style={{ fontSize: 13, color: 'var(--gray-500)', lineHeight: 1.6 }}>
+                    Content အပြည့်အစုံ ရယူပြီးမှသာ Onboarding ပြန်လုပ်နိုင်ပါသည်။
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     className="btn btn-outline"
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, fontSize: 13, padding: '10px 12px' }}
                     onClick={() => setShowRestartConfirm(false)}
                   >
                     ပိတ်ရန်
                   </button>
                   <button
                     className="btn btn-primary"
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, fontSize: 13, padding: '10px 12px' }}
                     onClick={() => {
                       setShowRestartConfirm(false);
                       dispatch({ type: 'SET_SCREEN', payload: 'payment' });
                     }}
                   >
-                    <CreditCard size={16} />
-                    Payment ပေးချေရန်
+                    <CreditCard size={14} />
+                    Payment
                   </button>
                 </div>
               </div>
@@ -526,29 +529,32 @@ export function MainScreen() {
             <div style={{
               background: 'var(--white)',
               borderRadius: 16,
-              padding: 24,
-              maxWidth: 340,
-              width: '100%',
+              padding: 20,
+              maxWidth: 320,
+              width: 'calc(100% - 40px)',
+              maxHeight: 'calc(100vh - 80px)',
+              overflowY: 'auto',
               boxShadow: 'var(--shadow-lg)',
+              boxSizing: 'border-box',
             }}>
               <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                <RotateCcw size={36} style={{ color: 'var(--gray-400)', marginBottom: 12 }} />
-                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
-                  အချက်အလက်များကို ပြန်လည်ရေးသွင်းမလား?
+                <RotateCcw size={32} style={{ color: 'var(--gray-400)', marginBottom: 10 }} />
+                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+                  ပြန်လည်ရေးသွင်းမလား?
                 </h3>
                 {needsExtraPayment ? (
-                  <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
-                    ခွင့်ပြုထားသော အခမဲ့ ၂ ကြိမ် ပြည့်သွားပါပြီ။ ထပ်မံပြုလုပ်လိုပါက
+                  <p style={{ fontSize: 13, color: 'var(--gray-500)', lineHeight: 1.6 }}>
+                    အခမဲ့ ၂ ကြိမ် ပြည့်ပါပြီ။ ထပ်လုပ်လိုပါက
                     <br />
-                    <span style={{ fontWeight: 700, color: 'var(--black)', fontSize: 16 }}>
+                    <span style={{ fontWeight: 700, color: 'var(--black)', fontSize: 15 }}>
                       15,000 MMK
                     </span>
                     <br />
                     ထပ်ပေးရပါမည်။
                   </p>
                 ) : (
-                  <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
-                    အချက်အလက် အသစ်များကို အသုံးပြု၍ Interview Content အသစ်များကို ထပ်မံဖန်တီးနိုင်ပါသည်။
+                  <p style={{ fontSize: 13, color: 'var(--gray-500)', lineHeight: 1.6 }}>
+                    Interview Content အသစ် ထပ်မံဖန်တီးနိုင်ပါသည်။
                     <br />
                     <span style={{ fontWeight: 600, color: 'var(--black)' }}>
                       အခမဲ့ {freeRemaining} ကြိမ် ကျန်ရှိပါသေးသည်။
@@ -556,10 +562,10 @@ export function MainScreen() {
                   </p>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   className="btn btn-outline"
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, fontSize: 13, padding: '10px 12px' }}
                   onClick={() => setShowRestartConfirm(false)}
                 >
                   မလုပ်တော့ပါ
@@ -567,27 +573,27 @@ export function MainScreen() {
                 {canFreeRestart ? (
                   <button
                     className="btn btn-primary"
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, fontSize: 13, padding: '10px 12px' }}
                     onClick={() => {
                       setShowRestartConfirm(false);
                       dispatch({ type: 'RESET_ONBOARDING' });
                       dispatch({ type: 'SET_SCREEN', payload: 'onboarding' });
                     }}
                   >
-                    <RotateCcw size={16} />
+                    <RotateCcw size={14} />
                     ပြန်လုပ်မည်
                   </button>
                 ) : (
                   <button
                     className="btn btn-primary"
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, fontSize: 13, padding: '10px 12px' }}
                     onClick={() => {
                       setShowRestartConfirm(false);
                       dispatch({ type: 'SET_SCREEN', payload: 'payment' });
                     }}
                   >
-                    <CreditCard size={16} />
-                    Payment ပေးချေမည်
+                    <CreditCard size={14} />
+                    Payment
                   </button>
                 )}
               </div>
