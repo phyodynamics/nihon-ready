@@ -568,61 +568,62 @@ ${qaList}
 // Interview Test Mode — Evaluate User Answers
 // ==========================================
 export function buildTestEvaluatePrompt(userData, testResults) {
-  const jlpt = getJLPTGuidelines(userData.japaneseLevel);
+  const jlpt = getJLPTGuidelines(userData.japaneseLevel || 'N4');
 
   const resultsText = testResults.map((r, i) => `
-Question ${i+1}: ${r.question}
-User's Japanese Answer: ${r.japaneseAnswer || '(မဖြေပါ)'}
-User's Burmese Answer: ${r.burmeseAnswer || '(မဖြေပါ)'}
-`).join('\n---\n');
+Q${i+1}: ${r.question}
+JP: ${r.japaneseAnswer || '(မဖြေပါ)'}
+MY: ${r.burmeseAnswer || '(မဖြေပါ)'}
+`).join('\n');
 
   return `[SYSTEM ROLE]
-You are a strict but encouraging Japanese interview evaluator. Evaluate the user's practice interview answers and provide detailed feedback.
+You are an encouraging Japanese interview evaluator. Evaluate these practice answers concisely.
 
-[APPLICANT INFO]
-Name: ${userData.name}
-Japanese Level: ${userData.japaneseLevel}
-Target Job: ${userData.targetJob}
+[APPLICANT]
+Name: ${userData.name || 'N/A'}
+Level: ${userData.japaneseLevel || 'N4'}
+Job: ${userData.targetJob || 'N/A'}
+Grammar expected: ${jlpt.grammar}
 
-[JAPANESE LEVEL CONTEXT]
-Expected level: ${userData.japaneseLevel}
-- ${jlpt.grammar}
-- ${jlpt.vocabulary}
-
-[TEST RESULTS]
+[ANSWERS TO EVALUATE]
 ${resultsText}
 
 [CRITICAL OUTPUT RULES]
-- Write feedback in Burmese language
+- Write ALL feedback in Burmese language
 - DO NOT use Markdown formatting (no #, ##, ###, **, *, etc.)
-- Use plain text with clear labels
+- Use plain text only
+- Keep each question feedback to 2-3 sentences max
 - Be honest but encouraging
-- For each question, provide: score, feedback, and a model answer
+- Provide a short model answer (Japanese only) for each question
 
-[OUTPUT FORMAT]
+[OUTPUT FORMAT - follow this exactly]
 
 === Interview Test ရလဒ် ===
 
 Overall Score: [X/100]
-Overall Comment: [Burmese feedback on overall performance]
+Overall Comment: [1-2 sentences in Burmese]
 
 ---
 
-Question 1: [Restate the question]
+Q1: [question text]
+Score: [X/10]
+Feedback: [Burmese feedback, 2-3 sentences]
+Model: [Short model answer in Japanese at ${userData.japaneseLevel || 'N4'} level]
 
+---
+
+Q2: [question text]
 Score: [X/10]
 Feedback: [Burmese feedback]
-
-Model Answer:
-  Japanese: [Correct answer at ${userData.japaneseLevel} level]
-  Romaji: [Romaji reading]
-  Burmese: [Burmese translation]
+Model: [Short model answer in Japanese]
 
 ---
 
-(Repeat for all 10 questions)
+(Continue same format for Q3 through Q10)
+
+---
 
 === အကြံပြုချက်များ ===
 
-[3-5 specific improvement tips in Burmese]`;
+[3 specific improvement tips in Burmese, one per line]`;
 }

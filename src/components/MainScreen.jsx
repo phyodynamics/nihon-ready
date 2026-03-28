@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { callGemini, buildSecondPrompt, buildThirdPrompt, buildMentorPrompt, buildTestQuestionsPrompt, buildTestEvaluatePrompt } from '../lib/gemini';
 import { saveGeneratedContent, getGeneratedContent, getAllGeneratedContent } from '../lib/database';
@@ -884,12 +884,49 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
   );
 }
 
+const TEST_SESSION_KEY = 'nihon_test_session';
+
+function loadTestSession() {
+  try {
+    const raw = sessionStorage.getItem(TEST_SESSION_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    // Only restore if the session has meaningful state
+    if (data.testState === 'testing' || data.testState === 'results') {
+      return data;
+    }
+    return null;
+  } catch { return null; }
+}
+
+function saveTestSession(state) {
+  try {
+    // Only persist states worth restoring
+    if (state.testState === 'testing' || state.testState === 'results') {
+      sessionStorage.setItem(TEST_SESSION_KEY, JSON.stringify(state));
+    } else {
+      sessionStorage.removeItem(TEST_SESSION_KEY);
+    }
+  } catch { /* ignore */ }
+}
+
+function clearTestSession() {
+  try { sessionStorage.removeItem(TEST_SESSION_KEY); } catch { /* ignore */ }
+}
+
 function InterviewTestTab({ content, isPaid, onPayment, userData, showToast }) {
-  const [testState, setTestState] = useState('idle'); // idle, loading, testing, submitting, results
-  const [testQuestions, setTestQuestions] = useState([]);
-  const [currentQ, setCurrentQ] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [results, setResults] = useState(null);
+  const saved = useRef(loadTestSession()).current;
+
+  const [testState, setTestState] = useState(saved?.testState || 'idle');
+  const [testQuestions, setTestQuestions] = useState(saved?.testQuestions || []);
+  const [currentQ, setCurrentQ] = useState(saved?.currentQ || 0);
+  const [answers, setAnswers] = useState(saved?.answers || []);
+  const [results, setResults] = useState(saved?.results || null);
+
+  // Persist test session on every state change
+  useEffect(() => {
+    saveTestSession({ testState, testQuestions, currentQ, answers, results });
+  }, [testState, testQuestions, currentQ, answers, results]);
 
   const DAILY_LIMIT = 2;
 
@@ -974,28 +1011,45 @@ function InterviewTestTab({ content, isPaid, onPayment, userData, showToast }) {
     } catch (error) {
       console.error('Test start error:', error);
       showToast('Test မေးခွန်းများ ရယူ၍မရပါ', 'error');
+      clearTestSession();
       setTestState('idle');
     }
   }
 
   async function submitTest() {
     setTestState('submitting');
-    try {
-      const testData = testQuestions.map((q, i) => ({
-        question: `${q.japanese} / ${q.burmese}`,
-        japaneseAnswer: answers[i]?.japaneseAnswer || '',
-        burmeseAnswer: answers[i]?.burmeseAnswer || '',
-      }));
 
-      const prompt = buildTestEvaluatePrompt(userData, testData);
-      const result = await callGemini(prompt);
-      setResults(result);
-      setTestState('results');
-    } catch (error) {
-      console.error('Evaluate error:', error);
-      showToast('အကဲဖြတ်ချက် ရယူ၍မရပါ', 'error');
-      setTestState('testing');
+    const testData = testQuestions.map((q, i) => ({
+      question: `${q.japanese} / ${q.burmese}`,
+      japaneseAnswer: answers[i]?.japaneseAnswer || '',
+      burmeseAnswer: answers[i]?.burmeseAnswer || '',
+    }));
+
+    const prompt = buildTestEvaluatePrompt(userData, testData);
+
+    // Retry up to 2 times at the client level
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const result = await callGemini(prompt);
+        if (result && result.trim().length > 0) {
+          setResults(result);
+          setTestState('results');
+          return;
+        }
+        // Empty response — retry
+      } catch (error) {
+        console.error(`Evaluate error (attempt ${attempt + 1}):`, error);
+        if (attempt < 1) {
+          // Wait before retrying
+          await new Promise(r => setTimeout(r, 2000));
+          continue;
+        }
+      }
     }
+
+    // All attempts failed
+    showToast('အကဲဖြတ်ချက် ရယူ၍မရပါ။ ထပ်ကြိုးစားပါ။', 'error');
+    setTestState('testing');
   }
 
   function updateAnswer(field, value) {
@@ -1076,7 +1130,7 @@ function InterviewTestTab({ content, isPaid, onPayment, userData, showToast }) {
           <button
             className="btn btn-outline"
             style={{ flex: 1 }}
-            onClick={() => { setTestState('idle'); setResults(null); setTestQuestions([]); }}
+            onClick={() => { clearTestSession(); setTestState('idle'); setResults(null); setTestQuestions([]); }}
           >
             <RotateCcw size={16} />
             နောက်တစ်ကြိမ် ထပ်လုပ်ရန်
