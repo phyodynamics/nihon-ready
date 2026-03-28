@@ -91,7 +91,7 @@ export function PaymentScreen() {
 
           <h2 style={{ fontSize: 20, fontWeight: 700 }}>Payment ချေပြီးပါပြီ</h2>
           <p style={{ fontSize: 14, color: 'var(--gray-500)', maxWidth: 300, lineHeight: 1.6 }}>
-            Admin မှ အတည်ပြုပြီးတာနဲ့ Content အားလုံးကို unlock လုပ်ပေးပါမယ်။
+            Admin မှ အတည်ပြုပြီးပါက Content အားလုံးကို အပြည့်အဝ အသုံးပြုနိုင်မည်ဖြစ်ပါသည်။ ပိုမိုမြန်ဆန်စွာ အတည်ပြုနိုင်ရန် ငွေလွှဲပြေစာ (Screenshot) ကို အောက်ပါ Telegram အကောင့်သို့ ပေးပို့ပေးပါရန် မေတ္တာရပ်ခံအပ်ပါသည်။
           </p>
 
           <div className="card" style={{ width: '100%', textAlign: 'left' }}>
@@ -118,7 +118,7 @@ export function PaymentScreen() {
                 @rin311202
                 <ExternalLink size={12} />
               </a>
-              သို့ ပို့ပြီး unlock လုပ်လိုက်ပါ။
+              သို့ ဆက်သွယ်ပေးပို့ပြီး Unlock ပြုလုပ်နိုင်ပါပြီ။
             </p>
           </div>
 
@@ -126,7 +126,7 @@ export function PaymentScreen() {
             className="btn btn-primary btn-full"
             onClick={() => dispatch({ type: 'SET_SCREEN', payload: 'main' })}
           >
-            Main Page သို့ ပြန်သွားရန်
+            ပင်မစာမျက်နှာသို့ ပြန်သွားရန်
           </button>
         </div>
       </div>
@@ -162,7 +162,7 @@ export function PaymentScreen() {
       {/* Features */}
       <div className="card" style={{ marginBottom: 24 }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: 'var(--black)' }}>
-          Unlock လုပ်ရင်ရမဲ့ Features:
+          ရရှိနိုင်မည့် အကျိုးကျေးဇူးများ (Features):
         </h3>
         <ul className="payment-features">
           {features.map((f, i) => (
@@ -207,12 +207,12 @@ export function PaymentScreen() {
         {isSubmitting ? (
           <>
             <div className="loading-spinner" style={{ width: 18, height: 18, borderWidth: 2 }}></div>
-            ပို့နေပါသည်...
+            အတည်ပြုရန် စောင့်ဆိုင်းနေပါသည်...
           </>
         ) : (
           <>
             <Check size={18} />
-            Payment ချေပြီးပြီ
+            ငွေပေးချေပြီးပါပြီ
           </>
         )}
       </button>

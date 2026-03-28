@@ -5,10 +5,10 @@ export function WelcomeScreen() {
   const { state, dispatch } = useApp();
 
   const features = [
-    { icon: <BookOpen size={20} />, text: 'Interview မိတ်ဆက်စာပိုဒ် (ဂျပန်/ရိုမာဂျီး/မြန်မာ)' },
-    { icon: <Sparkles size={20} />, text: 'Interview မေးခွန်း ၄၅ ခု နှင့် အဖြေများ' },
-    { icon: <BriefcaseBusiness size={20} />, text: 'လုပ်ငန်းခွင် အတွေ့အကြုံ နှင့် Manners များ' },
-    { icon: <Brain size={20} />, text: 'AI Master Prompt ကိုယ်ပိုင် Mentor' },
+    { icon: <BookOpen size={20} />, text: 'မိမိကိုယ်ကို မိတ်ဆက်ခြင်း (ဂျပန်/ရိုမာဂျီ/မြန်မာ)' },
+    { icon: <Sparkles size={20} />, text: 'ဖြစ်နိုင်ခြေပိုများသော အင်တာဗျူးမေးခွန်း ၄၅ ခုနှင့် အဖြေများ' },
+    { icon: <BriefcaseBusiness size={20} />, text: 'လုပ်ငန်းခွင် အတွေ့အကြုံများနှင့် လိုက်နာရမည့် Manners များ' },
+    { icon: <Brain size={20} />, text: 'အချိန်မရွေး တိုင်ပင်ဆွေးနွေးနိုင်မည့် ကိုယ်ပိုင် AI Mentor' },
   ];
 
   return (
@@ -23,7 +23,7 @@ export function WelcomeScreen() {
           Nihon Ready
         </h1>
         <p style={{ fontSize: 15, color: 'var(--gray-500)', maxWidth: 300, margin: '0 auto', lineHeight: 1.7 }}>
-          ဂျပန်နိုင်ငံတွင် အလုပ်လုပ်ဖို့ ပြင်ဆင်နေတဲ့ မြန်မာလူမျိုးများအတွက် Interview Preparation App
+          ဂျပန်နိုင်ငံသို့ အလုပ်သွားရောက်လုပ်ကိုင်မည့် မြန်မာများအတွက် အင်တာဗျူးနှင့် လုပ်ငန်းခွင် အထောက်အကူပြု App
         </p>
       </div>
 
@@ -69,7 +69,7 @@ export function WelcomeScreen() {
           animationFillMode: 'both'
         }}>
           <p style={{ fontSize: 15, color: 'var(--gray-600)' }}>
-            မင်္ဂလာပါ, <strong>{state.user.firstName}</strong>
+            မင်္ဂလာပါ <strong>{state.user.firstName}</strong>
           </p>
         </div>
       )}

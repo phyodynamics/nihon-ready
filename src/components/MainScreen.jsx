@@ -468,19 +468,19 @@ export function MainScreen() {
               <div style={{ textAlign: 'center', marginBottom: 16 }}>
                 <RotateCcw size={36} style={{ color: 'var(--gray-400)', marginBottom: 12 }} />
                 <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
-                  Onboarding ပြန်လုပ်မလား?
+                  အချက်အလက်များကို ပြန်လည်ရေးသွင်းမလား?
                 </h3>
                 {canFreeRestart ? (
                   <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
-                    အချက်အလက်အသစ်ဖြည့်ပြီး Interview content အသစ် ပြန်ဖန်တီးနိုင်ပါသည်။
+                    အချက်အလက် အသစ်များကို အသုံးပြု၍ Interview Content အသစ်များကို ထပ်မံဖန်တီးနိုင်ပါသည်။
                     <br />
                     <span style={{ fontWeight: 600, color: 'var(--black)' }}>
-                      အခမဲ့ {freeRemaining} ကြိမ် ကျန်ပါသေးသည်။
+                      သင့်အနေဖြင့် အခမဲ့ {freeRemaining} ကြိမ် ထပ်မံ ပြုလုပ်ခွင့် ကျန်ရှိပါသေးသည်။
                     </span>
                   </p>
                 ) : needsExtraPayment ? (
                   <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
-                    အခမဲ့ ၂ ကြိမ် သုံးပြီးပါပြီ။ ထပ်လုပ်လိုပါက
+                    ခွင့်ပြုထားသော အခမဲ့ ၂ ကြိမ် ပြည့်သွားပါပြီ။ ထပ်မံပြုလုပ်လိုပါက
                     <br />
                     <span style={{ fontWeight: 700, color: 'var(--black)', fontSize: 16 }}>
                       15,000 MMK
@@ -490,7 +490,7 @@ export function MainScreen() {
                   </p>
                 ) : (
                   <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
-                    Content များကို အသုံးပြုရန် Payment ချေရပါမည်။
+                    Content အပြည့်အစုံကို ရယူအသုံးပြုနိုင်ရန် Payment အရင်ပေးချေရန် လိုအပ်ပါသည်။
                   </p>
                 )}
               </div>
@@ -513,7 +513,7 @@ export function MainScreen() {
                     }}
                   >
                     <RotateCcw size={16} />
-                    ပြန်လုပ်မယ်
+                    ပြန်လုပ်မည်
                   </button>
                 ) : (
                   <button
@@ -525,7 +525,7 @@ export function MainScreen() {
                     }}
                   >
                     <CreditCard size={16} />
-                    {needsExtraPayment ? 'Payment ချေရန်' : 'Unlock လုပ်ရန်'}
+                    {needsExtraPayment ? 'Payment ပေးချေမည်' : 'Unlock လုပ်ရန်'}
                   </button>
                 )}
               </div>
@@ -546,7 +546,7 @@ function IntroTab({ content, copyToClipboard, copied }) {
       <div className="content-section">
         <div className="content-section-title">
           <BookOpen size={20} />
-          မိတ်ဆက်စာ (自己紹介)
+          မိမိကိုယ်ကို မိတ်ဆက်ခြင်း (自己紹介)
         </div>
         <div className="card card-elevated" style={{ position: 'relative' }}>
           <button
@@ -641,14 +641,14 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
                 <Lock />
               </div>
               <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
-                ကျန်မေးခွန်းများ Unlock လုပ်ရန်
+                ကျန်ရှိသော မေးခွန်းများအားလုံးကို ရယူရန်
               </p>
               <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>
-                မေးခွန်း ၄၅ ခု၊ အတွေ့အကြုံ၊ Manners နှင့် AI Mentor Prompt
+                မေးခွန်း ၄၅ ခုတိတိ၊ အလုပ်အတွေ့အကြုံများ၊ လိုက်နာရမည့် Manners များနှင့် AI Mentor Prompt များ
               </p>
               <button className="btn btn-primary btn-full" onClick={onPayment}>
                 <Lock size={16} />
-                Payment ချေ၍ Unlock လုပ်ရန်
+                Payment ပေးချေ၍ ရယူပါ
               </button>
             </div>
           </div>
@@ -679,7 +679,7 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
                   ) : (
                     <>
                       <RefreshCw size={18} />
-                      မေးခွန်းအဖြေများ ဖန်တီးရန်
+                      မေးခွန်းနှင့် အဖြေများကို ထပ်မံဖန်တီးရန်
                     </>
                   )}
                 </button>
@@ -720,13 +720,13 @@ function ExperiencesTab({ content, isPaid, generating, onGenerate, onPayment }) 
           </div>
           <div className="lock-content">
             <div className="lock-icon"><Lock /></div>
-            <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Unlock လုပ်ရန်</p>
+            <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>အပြည့်အစုံကို ရယူရန်</p>
             <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>
-              လုပ်ငန်းခွင် အတွေ့အကြုံ၊ Mindset နှင့် Manners များ
+              အလုပ်အတွေ့အကြုံများ၊ စိတ်နေစိတ်ထား နှင့် မဖြစ်မနေသိထားရမည့် Manners များ
             </p>
             <button className="btn btn-primary btn-full" onClick={onPayment}>
               <Lock size={16} />
-              Payment ချေ၍ Unlock လုပ်ရန်
+              Payment ပေးချေ၍ ရယူပါ
             </button>
           </div>
         </div>
