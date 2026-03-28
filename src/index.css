@@ -663,7 +663,7 @@ textarea.input-field {
 }
 
 .accordion-body.open {
-  max-height: 2000px;
+  max-height: 50000px;
 }
 
 .accordion-content {

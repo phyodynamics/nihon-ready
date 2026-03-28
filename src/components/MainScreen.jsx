@@ -646,22 +646,20 @@ function IntroTab({ content, copyToClipboard, copied }) {
 }
 
 function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchProgress, onGenerate, onPayment, expandedAnswer, setExpandedAnswer }) {
-  // Calculate expected batches: 41 remaining questions / 10 per batch = 5 batches
   const remainingCount = Math.max(0, (content.questions?.length || 45) - 4);
   const BATCH_SIZE = 10;
   const expectedBatches = Math.ceil(remainingCount / BATCH_SIZE);
   const allAnswered = Object.keys(secondContent).length >= expectedBatches;
 
-  // Calculate question range for each batch
   function getBatchRange(batchNum) {
-    const start = 4 + (batchNum - 1) * BATCH_SIZE + 1; // first 4 are in section 4
+    const start = 4 + (batchNum - 1) * BATCH_SIZE + 1;
     const end = Math.min(start + BATCH_SIZE - 1, (content.questions?.length || 45));
     return { start, end };
   }
 
   return (
     <div className="fade-in">
-      {/* Answered Questions (first 4) - Always visible */}
+      {/* Answered Questions (first 4) - individually toggleable */}
       <div className="content-section">
         <div className="content-section-title">
           <Check size={20} />
@@ -685,23 +683,48 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
         ))}
       </div>
 
-      {/* 45 Questions List */}
+      {/* All 45 Questions - flat list, each toggleable */}
       <div className="content-section">
         <div className="content-section-title">
           <MessageSquare size={20} />
           Interview မေးခွန်း ({content.questions?.length || 45}) ခု
         </div>
 
-        {/* First 4 questions - visible */}
-        {content.questions?.slice(0, 4).map((q, i) => (
-          <div key={i} className="question-item fade-in-up" style={{ animationDelay: `${i * 0.03}s`, animationFillMode: 'both' }}>
-            <div className="question-number">Q{i + 1}</div>
-            <div className="question-text">{q.japanese}</div>
-            {q.burmese && <div className="question-translation">{q.burmese}</div>}
-          </div>
-        ))}
+        {/* First 4 questions always visible */}
+        {content.questions?.slice(0, 4).map((q, i) => {
+          const qId = `q-${i}`;
+          const isOpen = expandedAnswer === qId;
+          return (
+            <div key={i} className="accordion-item" style={{ marginBottom: 4 }}>
+              <button
+                className={`accordion-header ${isOpen ? 'open' : ''}`}
+                onClick={() => setExpandedAnswer(isOpen ? null : qId)}
+                style={{ padding: '10px 14px' }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                  <span style={{
+                    background: 'var(--accent)',
+                    color: '#fff',
+                    borderRadius: 6,
+                    padding: '2px 8px',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}>Q{i + 1}</span>
+                  {q.japanese}
+                </span>
+                <ChevronDown size={16} />
+              </button>
+              <div className={`accordion-body ${isOpen ? 'open' : ''}`}>
+                <div className="accordion-content" style={{ padding: '8px 14px 12px' }}>
+                  {q.burmese && <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 4 }}>{q.burmese}</div>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
 
-        {/* Paywall for remaining questions */}
+        {/* Paywall for remaining */}
         {!isPaid ? (
           <div style={{ position: 'relative', marginTop: 16 }}>
             <div className="lock-overlay" style={{ maxHeight: 200 }}>
@@ -713,14 +736,10 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
               ))}
             </div>
             <div className="lock-content">
-              <div className="lock-icon">
-                <Lock />
-              </div>
-              <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
-                ကျန်ရှိသော မေးခွန်းများအားလုံးကို ရယူရန်
-              </p>
+              <div className="lock-icon"><Lock /></div>
+              <p style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>ကျန်ရှိသော မေးခွန်းများအားလုံးကို ရယူရန်</p>
               <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>
-                မေးခွန်း ၄၅ ခုတိတိ၊ အလုပ်အတွေ့အကြုံများ၊ လိုက်နာရမည့် Manners များနှင့် AI Mentor Prompt များ
+                မေးခွန်း ၄၅ ခုတိတိ၊ အလုပ်အတွေ့အကြုံများနှင့် AI Mentor Prompt များ
               </p>
               <button className="btn btn-primary btn-full" onClick={onPayment}>
                 <Lock size={16} />
@@ -730,32 +749,35 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
           </div>
         ) : (
           <>
-            {/* Show remaining questions in toggleable groups */}
-            {Array.from({ length: expectedBatches }, (_, bIdx) => {
-              const { start, end } = getBatchRange(bIdx + 1);
-              const groupId = `qgroup-${bIdx}`;
-              const isOpen = expandedAnswer === groupId;
-              const questionsInGroup = content.questions?.slice(start - 1, end) || [];
-
+            {/* Remaining questions Q5..Q45 - each individually toggleable */}
+            {content.questions?.slice(4).map((q, i) => {
+              const qNum = i + 5;
+              const qId = `q-${i + 4}`;
+              const isOpen = expandedAnswer === qId;
               return (
-                <div key={bIdx} className="accordion-item" style={{ marginTop: 8 }}>
+                <div key={i + 4} className="accordion-item" style={{ marginBottom: 4 }}>
                   <button
                     className={`accordion-header ${isOpen ? 'open' : ''}`}
-                    onClick={() => setExpandedAnswer(isOpen ? null : groupId)}
-                    style={{ fontSize: 14 }}
+                    onClick={() => setExpandedAnswer(isOpen ? null : qId)}
+                    style={{ padding: '10px 14px' }}
                   >
-                    <span>Q{start} ~ Q{end} ({questionsInGroup.length} ခု)</span>
-                    <ChevronDown size={18} />
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                      <span style={{
+                        background: 'var(--gray-700)',
+                        color: '#fff',
+                        borderRadius: 6,
+                        padding: '2px 8px',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}>Q{qNum}</span>
+                      {q.japanese}
+                    </span>
+                    <ChevronDown size={16} />
                   </button>
                   <div className={`accordion-body ${isOpen ? 'open' : ''}`}>
-                    <div className="accordion-content" style={{ padding: '8px 0' }}>
-                      {questionsInGroup.map((q, qi) => (
-                        <div key={qi} className="question-item" style={{ marginBottom: 6 }}>
-                          <div className="question-number">Q{start + qi}</div>
-                          <div className="question-text">{q.japanese}</div>
-                          {q.burmese && <div className="question-translation">{q.burmese}</div>}
-                        </div>
-                      ))}
+                    <div className="accordion-content" style={{ padding: '8px 14px 12px' }}>
+                      {q.burmese && <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>{q.burmese}</div>}
                     </div>
                   </div>
                 </div>
@@ -785,7 +807,7 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
               </div>
             )}
 
-            {/* Show batch answers - toggleable with question range */}
+            {/* Batch answers - each toggleable */}
             {Object.keys(secondContent).sort((a, b) => Number(a) - Number(b)).map(batchKey => {
               const batchNum = Number(batchKey);
               const { start, end } = getBatchRange(batchNum);
@@ -793,7 +815,7 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
               const isOpen = expandedAnswer === answerId;
 
               return (
-                <div key={batchKey} className="content-section" style={{ marginTop: 12 }}>
+                <div key={batchKey} style={{ marginTop: 12 }}>
                   <div className="accordion-item">
                     <button
                       className={`accordion-header ${isOpen ? 'open' : ''}`}
