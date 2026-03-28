@@ -451,12 +451,66 @@ export function MainScreen() {
 
       {/* Restart Onboarding Confirmation */}
       {showRestartConfirm && (() => {
+        // Unpaid users must pay first before restarting
+        if (!isPaid) {
+          return (
+            <div style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 999,
+              padding: 20,
+            }}>
+              <div style={{
+                background: 'var(--white)',
+                borderRadius: 16,
+                padding: 24,
+                maxWidth: 340,
+                width: '100%',
+                boxShadow: 'var(--shadow-lg)',
+              }}>
+                <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                  <Lock size={36} style={{ color: 'var(--gray-400)', marginBottom: 12 }} />
+                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+                    Onboarding ပြန်လုပ်ရန် Payment လိုအပ်ပါသည်
+                  </h3>
+                  <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
+                    Content အပြည့်အစုံ ရယူပြီးမှသာ Onboarding ကို ပြန်လည်ပြုလုပ်နိုင်ပါသည်။
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    className="btn btn-outline"
+                    style={{ flex: 1 }}
+                    onClick={() => setShowRestartConfirm(false)}
+                  >
+                    ပိတ်ရန်
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                    onClick={() => {
+                      setShowRestartConfirm(false);
+                      dispatch({ type: 'SET_SCREEN', payload: 'payment' });
+                    }}
+                  >
+                    <CreditCard size={16} />
+                    Payment ပေးချေရန်
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Paid users: 2 free restarts, then 15,000 each
         const onboardingCount = state.dbUser?.onboarding_count || 0;
-        // Unpaid users can always redo onboarding (first content is free)
-        // Paid users get 2 free restarts, then need to pay 15,000 each
-        const needsExtraPayment = isPaid && onboardingCount >= 2;
+        const needsExtraPayment = onboardingCount >= 2;
         const canFreeRestart = !needsExtraPayment;
-        const freeRemaining = isPaid ? Math.max(0, 2 - onboardingCount) : null;
+        const freeRemaining = Math.max(0, 2 - onboardingCount);
 
         return (
           <div style={{
@@ -495,14 +549,10 @@ export function MainScreen() {
                 ) : (
                   <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
                     အချက်အလက် အသစ်များကို အသုံးပြု၍ Interview Content အသစ်များကို ထပ်မံဖန်တီးနိုင်ပါသည်။
-                    {freeRemaining !== null && (
-                      <>
-                        <br />
-                        <span style={{ fontWeight: 600, color: 'var(--black)' }}>
-                          သင့်အနေဖြင့် အခမဲ့ {freeRemaining} ကြိမ် ထပ်မံ ပြုလုပ်ခွင့် ကျန်ရှိပါသေးသည်။
-                        </span>
-                      </>
-                    )}
+                    <br />
+                    <span style={{ fontWeight: 600, color: 'var(--black)' }}>
+                      အခမဲ့ {freeRemaining} ကြိမ် ကျန်ရှိပါသေးသည်။
+                    </span>
                   </p>
                 )}
               </div>

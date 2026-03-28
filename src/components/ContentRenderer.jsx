@@ -1,11 +1,11 @@
 // Content renderer that parses AI output into styled React elements
 // Includes TTS speak buttons for language blocks
 
-import { useState, useMemo, Fragment } from 'react';
+import { useState, useMemo, memo, Fragment } from 'react';
 import { SpeakButton } from './SpeakButton';
 import { isTTSSupported, isLangSupported } from '../lib/tts';
 
-export function ContentRenderer({ content, className = '' }) {
+export const ContentRenderer = memo(function ContentRenderer({ content, className = '' }) {
   if (!content) return null;
 
   const elements = useMemo(() => parseContent(content), [content]);
@@ -15,7 +15,7 @@ export function ContentRenderer({ content, className = '' }) {
       {elements}
     </div>
   );
-}
+});
 
 function parseContent(text) {
   const lines = text.split('\n');

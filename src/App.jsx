@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { isTelegramEnv, getTelegramUser, initTelegramApp, isAdmin } from './lib/telegram';
 import { getUser, createUser, getGeneratedContent, getPayment, getOnboardingData } from './lib/database';
@@ -6,13 +6,15 @@ import { Toast } from './components/Toast';
 import { LoadingScreen } from './components/LoadingScreen';
 import { NotTelegramScreen } from './components/NotTelegramScreen';
 import { WelcomeScreen } from './components/WelcomeScreen';
-import { OnboardingScreen } from './components/OnboardingScreen';
-import { GeneratingScreen } from './components/GeneratingScreen';
-import { MainScreen } from './components/MainScreen';
-import { PaymentScreen } from './components/PaymentScreen';
-import { AdminDashboard } from './components/AdminDashboard';
 import { preloadVoices } from './lib/tts';
 import './index.css';
+
+// Lazy load heavy screens for faster initial load
+const OnboardingScreen = lazy(() => import('./components/OnboardingScreen').then(m => ({ default: m.OnboardingScreen })));
+const GeneratingScreen = lazy(() => import('./components/GeneratingScreen').then(m => ({ default: m.GeneratingScreen })));
+const MainScreen = lazy(() => import('./components/MainScreen').then(m => ({ default: m.MainScreen })));
+const PaymentScreen = lazy(() => import('./components/PaymentScreen').then(m => ({ default: m.PaymentScreen })));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 
 // Preload TTS voices
 preloadVoices();
@@ -170,7 +172,9 @@ function AppContent() {
   return (
     <div className="app-container">
       <Toast />
-      {renderScreen()}
+      <Suspense fallback={<LoadingScreen />}>
+        {renderScreen()}
+      </Suspense>
 
       {/* Admin FAB - only for admin users */}
       {state.user && isAdmin(state.user.id) && state.screen !== 'admin' && state.screen !== 'loading' && (
