@@ -3,7 +3,7 @@
 
 import { useState, useMemo, Fragment } from 'react';
 import { SpeakButton } from './SpeakButton';
-import { isTTSSupported } from '../lib/tts';
+import { isTTSSupported, isLangSupported } from '../lib/tts';
 
 export function ContentRenderer({ content, className = '' }) {
   if (!content) return null;
@@ -235,12 +235,13 @@ function formatInline(text) {
 // Language block with label + speak button
 function LangBlock({ label, langClass, lang, text }) {
   if (!text) return null;
+  const showSpeak = isTTSSupported() && isLangSupported(lang);
   
   return (
     <div className="lang-block" style={{ marginBottom: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
         <span className={`lang-label ${langClass}`}>{label}</span>
-        {isTTSSupported() && <SpeakButton text={text} lang={lang} size="sm" />}
+        {showSpeak && <SpeakButton text={text} lang={lang} size="sm" />}
       </div>
       <div style={{ lineHeight: 1.8, paddingLeft: 4 }}>{text}</div>
     </div>
@@ -249,11 +250,12 @@ function LangBlock({ label, langClass, lang, text }) {
 
 // Inline language line with tag + speak button
 function LangLine({ tag, tagClass, lang, text }) {
+  const showSpeak = isTTSSupported() && isLangSupported(lang);
   return (
     <div className="lang-line">
       <span className={`lang-tag ${tagClass}`}>{tag}</span>
       <span style={{ flex: 1 }}>{text}</span>
-      {isTTSSupported() && <SpeakButton text={text} lang={lang} size="sm" />}
+      {showSpeak && <SpeakButton text={text} lang={lang} size="sm" />}
     </div>
   );
 }

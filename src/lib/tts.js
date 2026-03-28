@@ -1,91 +1,112 @@
 // Text-to-Speech utility using Web Speech API
-// Supports Japanese (ja-JP), English/Romaji (en-US), and Burmese (my-MM)
+// Supports Japanese (ja-JP), English/Romaji (en-US)
 
-let currentUtterance = null;
-let isSpeaking = false;
-let onStateChange = null;
+let currentId = null; // track which text is being spoken
+let listeners = new Set();
+
+// Notify all listeners
+function notifyAll(state, id) {
+  listeners.forEach(fn => fn(state, id));
+}
+
+// Subscribe to state changes (returns unsubscribe function)
+export function subscribeTTS(callback) {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
 
 // Language detection
 function detectLanguage(text) {
   const cleaned = text.trim();
-  
-  // Japanese: contains Hiragana, Katakana, or Kanji
-  if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(cleaned)) {
-    return 'ja-JP';
-  }
-  
-  // Burmese: contains Myanmar script
-  if (/[\u1000-\u109F\uAA60-\uAA7F]/.test(cleaned)) {
-    return 'my-MM';
-  }
-  
-  // Default: English (for Romaji)
+  if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(cleaned)) return 'ja-JP';
+  if (/[\u1000-\u109F\uAA60-\uAA7F]/.test(cleaned)) return 'my-MM';
   return 'en-US';
+}
+
+// Check if a voice exists for a language
+let voicesLoaded = false;
+let availableLangs = new Set();
+
+function loadVoices() {
+  if (!('speechSynthesis' in window)) return;
+  const voices = speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    voicesLoaded = true;
+    availableLangs.clear();
+    voices.forEach(v => {
+      availableLangs.add(v.lang);
+      availableLangs.add(v.lang.split('-')[0]); // also add prefix
+    });
+  }
+}
+
+export function isLangSupported(lang) {
+  if (!voicesLoaded) loadVoices();
+  if (!voicesLoaded) return true; // assume supported until voices load
+  const prefix = lang.split('-')[0];
+  return availableLangs.has(lang) || availableLangs.has(prefix);
 }
 
 // Get best available voice for language
 function getVoice(lang) {
   const voices = speechSynthesis.getVoices();
-  
-  // Try exact match first
   let voice = voices.find(v => v.lang === lang);
-  
-  // Try prefix match (e.g., 'ja' for 'ja-JP')
   if (!voice) {
     const prefix = lang.split('-')[0];
     voice = voices.find(v => v.lang.startsWith(prefix));
   }
-  
-  // For Burmese, fall back to English if no Burmese voice
-  if (!voice && lang === 'my-MM') {
-    voice = voices.find(v => v.lang.startsWith('en'));
-  }
-  
   return voice;
+}
+
+// Generate a unique ID for a text+lang combo
+function makeId(text, lang) {
+  return `${lang}:${text.slice(0, 50)}`;
 }
 
 // Speak text
 export function speak(text, options = {}) {
-  if (!('speechSynthesis' in window)) {
-    console.warn('TTS not supported');
+  if (!('speechSynthesis' in window)) return false;
+
+  const lang = options.lang || detectLanguage(text);
+  const id = makeId(text, lang);
+
+  // If same text is playing, stop it
+  if (currentId === id) {
+    stop();
     return false;
   }
-  
+
   // Stop any current speech
   stop();
-  
-  const lang = options.lang || detectLanguage(text);
+
   const utterance = new SpeechSynthesisUtterance(text);
-  
   utterance.lang = lang;
   utterance.rate = options.rate || (lang === 'ja-JP' ? 0.85 : 0.9);
   utterance.pitch = options.pitch || 1;
   utterance.volume = options.volume || 1;
-  
+
   const voice = getVoice(lang);
-  if (voice) {
-    utterance.voice = voice;
-  }
-  
+  if (voice) utterance.voice = voice;
+
+  currentId = id;
+
   utterance.onstart = () => {
-    isSpeaking = true;
-    onStateChange?.('playing');
+    notifyAll('playing', id);
   };
-  
+
   utterance.onend = () => {
-    isSpeaking = false;
-    currentUtterance = null;
-    onStateChange?.('stopped');
+    currentId = null;
+    notifyAll('stopped', null);
   };
-  
+
   utterance.onerror = () => {
-    isSpeaking = false;
-    currentUtterance = null;
-    onStateChange?.('stopped');
+    currentId = null;
+    notifyAll('stopped', null);
   };
-  
-  currentUtterance = utterance;
+
   speechSynthesis.speak(utterance);
+  // Notify immediately so button updates before onstart fires
+  notifyAll('playing', id);
   return true;
 }
 
@@ -94,19 +115,13 @@ export function stop() {
   if ('speechSynthesis' in window) {
     speechSynthesis.cancel();
   }
-  isSpeaking = false;
-  currentUtterance = null;
-  onStateChange?.('stopped');
+  currentId = null;
+  notifyAll('stopped', null);
 }
 
-// Check if currently speaking
-export function getIsSpeaking() {
-  return isSpeaking;
-}
-
-// Subscribe to state changes
-export function onTTSStateChange(callback) {
-  onStateChange = callback;
+// Get current speaking ID
+export function getCurrentId() {
+  return currentId;
 }
 
 // Check if TTS is supported
@@ -114,13 +129,12 @@ export function isTTSSupported() {
   return 'speechSynthesis' in window;
 }
 
-// Preload voices (needed on some browsers)
+// Preload voices
 export function preloadVoices() {
   if ('speechSynthesis' in window) {
-    speechSynthesis.getVoices();
-    // Chrome loads voices async
+    loadVoices();
     if (speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+      speechSynthesis.onvoiceschanged = () => loadVoices();
     }
   }
 }
