@@ -30,7 +30,7 @@ const ONBOARDING_QUESTIONS = [
     id: 'age',
     title: 'အသက်',
     subtitle: 'Age',
-    type: 'number',
+    type: 'text',
     placeholder: 'ဥပမာ - 25',
     required: true
   },
