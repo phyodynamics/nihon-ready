@@ -192,9 +192,10 @@ Format each question as:
 
 === SECTION 4: 4 DETAILED INTERVIEW ANSWERS ===
 
-Select the 4 most critical questions from Section 3. For each, provide a highly tailored answer that makes this specific applicant stand out.
+Select the 4 most critical questions from Section 3. For each, provide a highly tailored answer (4-6 sentences minimum) that makes this specific applicant stand out.
 
 IMPORTANT: All Japanese answers MUST use grammar and vocabulary appropriate for ${userData.japaneseLevel} level.
+Structure each answer: Context/Background -> Main Point -> Supporting Detail -> Result -> Conclusion
 
 Format each answer as:
 
@@ -204,20 +205,37 @@ QUESTION [Number]: [Japanese Question]
 ANSWER:
 
 Sentence 1:
-  Japanese: [Japanese sentence - ${userData.japaneseLevel} level]
+  Japanese: [Opening/Context - ${userData.japaneseLevel} level]
   Romaji: [Romaji reading]
   Burmese: [Burmese translation]
 
 Sentence 2:
-  Japanese: [Japanese sentence - ${userData.japaneseLevel} level]
+  Japanese: [Main point - ${userData.japaneseLevel} level]
   Romaji: [Romaji reading]
   Burmese: [Burmese translation]
 
-(Continue for all sentences in the answer)
+Sentence 3:
+  Japanese: [Supporting detail - ${userData.japaneseLevel} level]
+  Romaji: [Romaji reading]
+  Burmese: [Burmese translation]
+
+Sentence 4:
+  Japanese: [Result/outcome - ${userData.japaneseLevel} level]
+  Romaji: [Romaji reading]
+  Burmese: [Burmese translation]
+
+Sentence 5:
+  Japanese: [Conclusion - ${userData.japaneseLevel} level]
+  Romaji: [Romaji reading]
+  Burmese: [Burmese translation]
 
 Key Vocabulary:
 - [Japanese Word] / [Romaji] / [Burmese Meaning]
-- [Japanese Word] / [Romaji] / [Burmese Meaning]`;
+- [Japanese Word] / [Romaji] / [Burmese Meaning]
+- [Japanese Word] / [Romaji] / [Burmese Meaning]
+
+Interview Tip:
+[Burmese tip on delivery - tone, body language, emphasis]`;
 }
 
 // ==========================================
@@ -257,6 +275,9 @@ ${questionList}
 - Use plain text with clear labels
 - Every answer must be deeply personalized using the applicant's data
 - Answers should sound natural and confident, not generic
+- Each answer MUST have 4-6 sentences minimum (DO NOT give short 1-2 sentence answers)
+- Structure each answer: Context/Background -> Main Point -> Supporting Detail -> Conclusion/Future
+- Include practical examples from the applicant's experience where possible
 
 [OUTPUT FORMAT - Follow Exactly For Each Question]
 
@@ -266,19 +287,39 @@ QUESTION [Number]: [Japanese Question from Input]
 ANSWER:
 
 Sentence 1:
-  Japanese: [Japanese sentence - ${userData.japaneseLevel} level]
+  Japanese: [Opening/Context sentence - ${userData.japaneseLevel} level]
   Romaji: [Romaji reading]
   Burmese: [Burmese translation]
 
 Sentence 2:
-  Japanese: [Japanese sentence - ${userData.japaneseLevel} level]
+  Japanese: [Main point sentence - ${userData.japaneseLevel} level]
   Romaji: [Romaji reading]
   Burmese: [Burmese translation]
 
-(Continue for all sentences)
+Sentence 3:
+  Japanese: [Supporting detail/example - ${userData.japaneseLevel} level]
+  Romaji: [Romaji reading]
+  Burmese: [Burmese translation]
+
+Sentence 4:
+  Japanese: [Result/outcome - ${userData.japaneseLevel} level]
+  Romaji: [Romaji reading]
+  Burmese: [Burmese translation]
+
+Sentence 5:
+  Japanese: [Conclusion/future intent - ${userData.japaneseLevel} level]
+  Romaji: [Romaji reading]
+  Burmese: [Burmese translation]
+
+(Add more sentences if needed for a thorough answer)
 
 Key Vocabulary:
 - [Japanese Word] / [Romaji] / [Burmese Meaning]
+- [Japanese Word] / [Romaji] / [Burmese Meaning]
+- [Japanese Word] / [Romaji] / [Burmese Meaning]
+
+Interview Tip:
+[Burmese language tip about how to deliver this answer effectively - body language, tone, key phrases to emphasize]
 
 ---
 

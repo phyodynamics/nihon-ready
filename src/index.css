@@ -1268,6 +1268,17 @@ textarea.input-field {
   border-top: 1px solid var(--gray-100);
 }
 
+.content-rendered .tip-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e65100;
+  margin: 12px 0 4px;
+  padding: 8px 12px;
+  background: #fff3e0;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid #ff9800;
+}
+
 .content-rendered .lang-label {
   display: inline-block;
   padding: 4px 12px;

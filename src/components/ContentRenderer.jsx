@@ -75,6 +75,13 @@ function parseContent(text) {
       continue;
     }
 
+    // Interview Tip:
+    if (/^Interview Tip:$/i.test(trimmed)) {
+      elements.push(<div key={key++} className="tip-label">💡 Interview Tip</div>);
+      i++;
+      continue;
+    }
+
     // [Japanese] label — collect the block below it for TTS
     if (/^\[Japanese\]$/i.test(trimmed)) {
       const { block, endIndex } = collectBlock(lines, i + 1);

@@ -2,6 +2,7 @@
 // Supports Japanese (ja-JP), English/Romaji (en-US)
 
 let currentId = null; // track which text is being spoken
+let currentUtterance = null; // track the active utterance
 let listeners = new Set();
 
 // Notify all listeners
@@ -70,13 +71,13 @@ export function speak(text, options = {}) {
   const lang = options.lang || detectLanguage(text);
   const id = makeId(text, lang);
 
-  // If same text is playing, stop it
+  // If same text is playing, stop it (toggle)
   if (currentId === id) {
     stop();
     return false;
   }
 
-  // Stop any current speech
+  // Stop any current speech first
   stop();
 
   const utterance = new SpeechSynthesisUtterance(text);
@@ -89,24 +90,41 @@ export function speak(text, options = {}) {
   if (voice) utterance.voice = voice;
 
   currentId = id;
+  currentUtterance = utterance;
 
   utterance.onstart = () => {
-    notifyAll('playing', id);
+    // Only notify if this utterance is still the active one
+    if (currentUtterance === utterance) {
+      notifyAll('playing', id);
+    }
   };
 
   utterance.onend = () => {
-    currentId = null;
-    notifyAll('stopped', null);
+    if (currentUtterance === utterance) {
+      currentId = null;
+      currentUtterance = null;
+      notifyAll('stopped', null);
+    }
   };
 
-  utterance.onerror = () => {
-    currentId = null;
-    notifyAll('stopped', null);
+  utterance.onerror = (e) => {
+    // Ignore 'interrupted' errors from cancel()
+    if (e.error === 'interrupted') return;
+    if (currentUtterance === utterance) {
+      currentId = null;
+      currentUtterance = null;
+      notifyAll('stopped', null);
+    }
   };
 
-  speechSynthesis.speak(utterance);
-  // Notify immediately so button updates before onstart fires
-  notifyAll('playing', id);
+  // Small delay to ensure previous cancel() completed
+  setTimeout(() => {
+    if (currentUtterance === utterance) {
+      speechSynthesis.speak(utterance);
+      notifyAll('playing', id);
+    }
+  }, 50);
+
   return true;
 }
 
@@ -116,6 +134,7 @@ export function stop() {
     speechSynthesis.cancel();
   }
   currentId = null;
+  currentUtterance = null;
   notifyAll('stopped', null);
 }
 
