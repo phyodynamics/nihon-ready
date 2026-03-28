@@ -53,6 +53,16 @@ function makeId(text, lang) {
   return `${lang}:${text.slice(0, 50)}`;
 }
 
+// Clean text to avoid Windows TTS reading romaji incorrectly
+function cleanJapaneseText(text, lang) {
+  if (lang !== 'ja-JP') return text;
+  // Remove everything inside parentheses (both ASCII and fullwidth)
+  let cleaned = text.replace(/[\(（].*?[\)）]/g, ' ');
+  // Remove leftover isolated english words/letters
+  cleaned = cleaned.replace(/[a-zA-Z\-]+/g, ' ');
+  return cleaned.trim() || text; // fallback to original if completely empty
+}
+
 // Core speak function — simple and reliable
 export function speak(text, options = {}) {
   if (!('speechSynthesis' in window)) return false;
@@ -75,8 +85,11 @@ export function speak(text, options = {}) {
   currentId = null;
   notifyAll('stopped', null);
 
+  // Use cleaned text for better Japanese TTS output
+  const textToSpeak = cleanJapaneseText(text, lang);
+
   // Create utterance
-  const utterance = new SpeechSynthesisUtterance(text);
+  const utterance = new SpeechSynthesisUtterance(textToSpeak);
   utterance.lang = lang;
   utterance.rate = lang === 'ja-JP' ? 0.85 : 0.9;
   utterance.pitch = 1;

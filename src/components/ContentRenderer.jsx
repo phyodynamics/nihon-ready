@@ -52,9 +52,13 @@ function parseContent(text) {
     // QUESTION [N]: text
     if (/^QUESTION\s+\[?(\d+)\]?:\s*(.+)$/i.test(trimmed)) {
       const match = trimmed.match(/^QUESTION\s+\[?(\d+)\]?:\s*(.+)$/i);
+      const showSpeak = isTTSSupported();
       elements.push(
-        <div key={key++} className="q-header">
-          <span className="q-number">Q{match[1]}</span> {match[2]}
+        <div key={key++} className="q-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <span className="q-number">Q{match[1]}</span> {match[2]}
+          </div>
+          {showSpeak && <SpeakButton text={match[2]} lang="ja-JP" size="sm" />}
         </div>
       );
       i++;

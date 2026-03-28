@@ -4,6 +4,7 @@ import { callGemini, buildSecondPrompt, buildThirdPrompt, buildMentorPrompt, bui
 import { saveGeneratedContent, getGeneratedContent, getAllGeneratedContent } from '../lib/database';
 import { sendTelegramFile } from '../lib/telegram';
 import { ContentRenderer } from './ContentRenderer';
+import { SpeakButton } from './SpeakButton';
 import {
   BookOpen, MessageSquare, BriefcaseBusiness, Brain, ClipboardCheck,
   Lock, ChevronDown, ChevronUp, Copy, Check,
@@ -717,7 +718,8 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
               </button>
               <div className={`accordion-body ${isOpen ? 'open' : ''}`}>
                 <div className="accordion-content" style={{ padding: '8px 14px 12px' }}>
-                  {q.burmese && <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 4 }}>{q.burmese}</div>}
+                  {q.burmese && <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 8 }}>{q.burmese}</div>}
+                  <SpeakButton text={q.japanese} lang="ja-JP" size="sm" label="မေးခွန်းကို နားထောင်ရန်" />
                 </div>
               </div>
             </div>
@@ -777,7 +779,8 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
                   </button>
                   <div className={`accordion-body ${isOpen ? 'open' : ''}`}>
                     <div className="accordion-content" style={{ padding: '8px 14px 12px' }}>
-                      {q.burmese && <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>{q.burmese}</div>}
+                      {q.burmese && <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 8 }}>{q.burmese}</div>}
+                      <SpeakButton text={q.japanese} lang="ja-JP" size="sm" label="မေးခွန်းကို နားထောင်ရန်" />
                     </div>
                   </div>
                 </div>
