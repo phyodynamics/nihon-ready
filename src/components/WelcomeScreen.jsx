@@ -1,5 +1,5 @@
 import { useApp } from '../context/AppContext';
-import { ArrowRight, Sparkles, BookOpen, BriefcaseBusiness, Brain } from 'lucide-react';
+import { ArrowRight, Sparkles, BookOpen, BriefcaseBusiness, Brain, Headphones } from 'lucide-react';
 
 export function WelcomeScreen() {
   const { state, dispatch } = useApp();
@@ -7,6 +7,7 @@ export function WelcomeScreen() {
   const features = [
     { icon: <BookOpen size={20} />, text: 'မိမိကိုယ်ကို မိတ်ဆက်ခြင်း (ဂျပန်/ရိုမာဂျီ/မြန်မာ)' },
     { icon: <Sparkles size={20} />, text: 'ဖြစ်နိုင်ခြေပိုများသော အင်တာဗျူးမေးခွန်း ၄၅ ခုနှင့် အဖြေများ' },
+    { icon: <Headphones size={20} />, text: 'အသံထွက် နားထောင်ပြီး လေ့ကျင့်နိုင်မည့် Interview Test Mode' },
     { icon: <BriefcaseBusiness size={20} />, text: 'လုပ်ငန်းခွင် အတွေ့အကြုံများနှင့် လိုက်နာရမည့် Manners များ' },
     { icon: <Brain size={20} />, text: 'အချိန်မရွေး တိုင်ပင်ဆွေးနွေးနိုင်မည့် ကိုယ်ပိုင် AI Mentor' },
   ];
