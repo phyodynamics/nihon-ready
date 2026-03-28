@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { isTelegramEnv, getTelegramUser, initTelegramApp, isAdmin } from './lib/telegram';
-import { getUser, createUser, getGeneratedContent, getPayment } from './lib/database';
+import { getUser, createUser, getGeneratedContent, getPayment, getOnboardingData } from './lib/database';
 import { Toast } from './components/Toast';
 import { LoadingScreen } from './components/LoadingScreen';
 import { NotTelegramScreen } from './components/NotTelegramScreen';
@@ -117,7 +117,12 @@ function AppContent() {
           }
         }
 
-        // Load onboarding data for potential regeneration
+        // Load onboarding data for batch generation
+        const onboardingRecord = await getOnboardingData(user.id);
+        if (onboardingRecord?.responses) {
+          dispatch({ type: 'SET_ONBOARDING_DATA', payload: onboardingRecord.responses });
+        }
+
         dispatch({ type: 'SET_SCREEN', payload: 'main' });
       } else {
         // Has account but no content yet

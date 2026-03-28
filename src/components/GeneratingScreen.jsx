@@ -112,47 +112,66 @@ function parseFirstResult(text) {
   };
 
   try {
+    // Match both === SECTION X === and ### Section X formats
+    const sectionPattern = (num, nextNum) => {
+      const patterns = [
+        // === SECTION X: ... === format (from prompt)
+        new RegExp(`===\\s*SECTION\\s*${num}[^=]*===([\\s\\S]*?)(?====\\s*SECTION\\s*${nextNum}|$)`, 'i'),
+        // ### Section X format (markdown fallback)
+        new RegExp(`###\\s*Section\\s*${num}[^\\n]*\\n([\\s\\S]*?)(?=###\\s*Section\\s*${nextNum}|$)`, 'i'),
+        // SECTION X: format (plain text)
+        new RegExp(`SECTION\\s*${num}[:\\s][^\\n]*\\n([\\s\\S]*?)(?=SECTION\\s*${nextNum}|$)`, 'i'),
+      ];
+      for (const pat of patterns) {
+        const match = text.match(pat);
+        if (match && match[1]?.trim()) return match[1].trim();
+      }
+      return null;
+    };
+
     // Extract Section 1: Self-Introduction
-    const section1Match = text.match(/### Section 1[\s\S]*?(?=### Section 2)/i);
-    if (section1Match) {
-      sections.selfIntro = section1Match[0]
-        .replace(/### Section 1[^\n]*\n/, '')
-        .trim();
+    const section1 = sectionPattern(1, 2);
+    if (section1) {
+      sections.selfIntro = section1;
     }
 
     // Extract Section 2: Vocabulary
-    const section2Match = text.match(/### Section 2[\s\S]*?(?=### Section 3)/i);
-    if (section2Match) {
-      const vocabText = section2Match[0].replace(/### Section 2[^\n]*\n/, '');
-      const vocabLines = vocabText.split('\n').filter(l => l.trim().startsWith('*') || l.trim().startsWith('-'));
+    const section2 = sectionPattern(2, 3);
+    if (section2) {
+      const vocabLines = section2.split('\n').filter(l => l.trim().startsWith('-') || l.trim().startsWith('*') || /^\d+\./.test(l.trim()));
       sections.vocabulary = vocabLines.map(line => {
-        const cleaned = line.replace(/^[\s*-]+/, '').trim();
+        const cleaned = line.replace(/^[\s*\-\d.]+/, '').trim();
         return { raw: cleaned };
-      });
+      }).filter(v => v.raw.length > 0);
     }
 
     // Extract Section 3: 45 Questions
-    const section3Match = text.match(/### Section 3[\s\S]*?(?=### Section 4)/i);
-    if (section3Match) {
-      const qText = section3Match[0].replace(/### Section 3[^\n]*\n/, '');
-      const qLines = qText.split('\n').filter(l => /^\d+\./.test(l.trim()));
+    const section3 = sectionPattern(3, 4);
+    if (section3) {
+      const qLines = section3.split('\n').filter(l => /^\d+\./.test(l.trim()));
       sections.questions = qLines.map(line => {
         const cleaned = line.replace(/^\d+\.\s*/, '').trim();
-        const parts = cleaned.split(/\s*-\s*/);
+        // Split by " / " to separate Japanese and Burmese
+        const slashParts = cleaned.split(/\s*\/\s*/);
+        if (slashParts.length >= 2) {
+          return {
+            japanese: slashParts[0].trim(),
+            burmese: slashParts.slice(1).join(' / ').trim()
+          };
+        }
         return {
-          japanese: parts[0] || cleaned,
-          burmese: parts[1] || ''
+          japanese: cleaned,
+          burmese: ''
         };
-      });
+      }).filter(q => q.japanese.length > 0);
     }
 
     // Extract Section 4: 4 Answered Questions
-    const section4Match = text.match(/### Section 4[\s\S]*/i);
-    if (section4Match) {
-      const ansText = section4Match[0].replace(/### Section 4[^\n]*\n/, '');
-      // Split by question markers
-      const questionBlocks = ansText.split(/(?=[-*]\s*(?:The\s+)?Question|####|###\s*(?:Question|မေးခွန်း))/i).filter(b => b.trim());
-      
+    const section4 = sectionPattern(4, 999);
+    if (section4) {
+      // Split by QUESTION markers
+      const questionBlocks = section4.split(/(?=QUESTION\s*\[?\d)/i).filter(b => b.trim());
+
       sections.answeredQuestions = questionBlocks.map(block => {
         return { raw: block.trim() };
       }).filter(q => q.raw.length > 20);

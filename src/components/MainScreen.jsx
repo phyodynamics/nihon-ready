@@ -7,7 +7,7 @@ import { ContentRenderer } from './ContentRenderer';
 import {
   BookOpen, MessageSquare, BriefcaseBusiness, Brain,
   Lock, ChevronDown, ChevronUp, Copy, Check,
-  Download, RefreshCw, CreditCard, Settings, User
+  Download, RefreshCw, CreditCard, Settings, User, RotateCcw
 } from 'lucide-react';
 
 function UserProfileCard({ user, isPaid }) {
@@ -109,6 +109,7 @@ export function MainScreen() {
   const [generatingMentor, setGeneratingMentor] = useState(false);
   const [currentBatch, setCurrentBatch] = useState(0);
   const [batchProgress, setBatchProgress] = useState('');
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
   const content = state.generatedContent.first;
   const isPaid = state.isPaid;
@@ -144,11 +145,13 @@ export function MainScreen() {
     setGeneratingBatch(true);
 
     try {
-      // Questions 5-45 (first 4 already answered), split into batches of 10
-      const remainingQuestions = content.questions.slice(4); // skip first 4
+      // 45 questions total, first 4 already answered in Section 4
+      // Remaining 41 questions need batch answers
+      const remainingQuestions = content.questions.slice(4);
+      const BATCH_SIZE = 10;
       const batches = [];
-      for (let i = 0; i < remainingQuestions.length; i += 10) {
-        batches.push(remainingQuestions.slice(i, i + 10));
+      for (let i = 0; i < remainingQuestions.length; i += BATCH_SIZE) {
+        batches.push(remainingQuestions.slice(i, i + BATCH_SIZE));
       }
 
       for (let i = 0; i < batches.length; i++) {
@@ -158,7 +161,12 @@ export function MainScreen() {
         setBatchProgress(`Batch ${i + 1}/${batches.length} ဖန်တီးနေပါသည်...`);
         setCurrentBatch(i + 1);
 
-        const questionsText = batches[i].map(q => q.japanese || q.raw || '').filter(Boolean);
+        // Build question texts with both Japanese and Burmese for context
+        const questionsText = batches[i].map(q => {
+          if (q.burmese) return `${q.japanese} / ${q.burmese}`;
+          return q.japanese || '';
+        }).filter(Boolean);
+
         const prompt = buildSecondPrompt(state.onboardingData, questionsText, i + 1);
         const result = await callGemini(prompt);
 
@@ -335,6 +343,14 @@ export function MainScreen() {
           <span style={{ fontWeight: 700, fontSize: 16 }}>Nihon Ready</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className="btn btn-outline"
+            style={{ padding: '8px 12px', fontSize: 13 }}
+            onClick={() => setShowRestartConfirm(true)}
+            title="Onboarding ပြန်လုပ်ရန်"
+          >
+            <RotateCcw size={16} />
+          </button>
           {isPaid && (
             <button className="btn btn-outline" style={{ padding: '8px 12px', fontSize: 13 }} onClick={handleDownload}>
               <Download size={16} />
@@ -422,6 +438,60 @@ export function MainScreen() {
           </button>
         ))}
       </div>
+
+      {/* Restart Onboarding Confirmation */}
+      {showRestartConfirm && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999,
+          padding: 20,
+        }}>
+          <div style={{
+            background: 'var(--white)',
+            borderRadius: 16,
+            padding: 24,
+            maxWidth: 340,
+            width: '100%',
+            boxShadow: 'var(--shadow-lg)',
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <RotateCcw size={36} style={{ color: 'var(--gray-400)', marginBottom: 12 }} />
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+                Onboarding ပြန်လုပ်မလား?
+              </h3>
+              <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
+                အချက်အလက်အသစ်ဖြည့်ပြီး Interview content အသစ် ပြန်ဖန်တီးနိုင်ပါသည်။ လက်ရှိ content များ အစားထိုးခံရပါမည်။
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                className="btn btn-outline"
+                style={{ flex: 1 }}
+                onClick={() => setShowRestartConfirm(false)}
+              >
+                မလုပ်တော့ပါ
+              </button>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1 }}
+                onClick={() => {
+                  setShowRestartConfirm(false);
+                  dispatch({ type: 'RESET_ONBOARDING' });
+                  dispatch({ type: 'SET_SCREEN', payload: 'onboarding' });
+                }}
+              >
+                <RotateCcw size={16} />
+                ပြန်လုပ်မယ်
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -467,7 +537,10 @@ function IntroTab({ content, copyToClipboard, copied }) {
 }
 
 function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchProgress, onGenerate, onPayment, expandedAnswer, setExpandedAnswer }) {
-  const allAnswered = Object.keys(secondContent).length >= 4; // 4 batches of ~10
+  // Calculate expected batches: 41 remaining questions / 10 per batch = 5 batches
+  const remainingCount = Math.max(0, (content.questions?.length || 45) - 4);
+  const expectedBatches = Math.ceil(remainingCount / 10);
+  const allAnswered = Object.keys(secondContent).length >= expectedBatches;
 
   return (
     <div className="fade-in">
