@@ -253,7 +253,7 @@ function UsersTab({ users, searchQuery, setSearchQuery, onTogglePaid }) {
             type="text"
             className="input-field"
             style={{ paddingLeft: 42 }}
-            placeholder="Search users..."
+            placeholder="Search by name, username, or Telegram ID..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />

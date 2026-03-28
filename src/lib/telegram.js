@@ -65,23 +65,24 @@ export async function sendTelegramFile(userId, fileContent, fileName) {
   return response.json();
 }
 
-// Send notification to admin via proxy (only once to primary admin)
+// Send notification to all admins via proxy
 export async function notifyAdmin(message) {
   if (ADMIN_IDS.length === 0) return;
 
-  const primaryAdminId = ADMIN_IDS[0];
-  try {
-    await fetch('/api/telegram', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'sendMessage',
-        chat_id: primaryAdminId,
-        text: message,
-        parse_mode: 'HTML'
-      })
-    });
-  } catch (e) {
-    console.error('Failed to notify admin:', e);
+  for (const adminId of ADMIN_IDS) {
+    try {
+      await fetch('/api/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sendMessage',
+          chat_id: adminId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+    } catch (e) {
+      console.error('Failed to notify admin:', adminId, e);
+    }
   }
 }

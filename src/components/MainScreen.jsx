@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { callGemini, buildSecondPrompt, buildThirdPrompt, buildMentorPrompt } from '../lib/gemini';
 import { saveGeneratedContent, getGeneratedContent, getAllGeneratedContent } from '../lib/database';
 import { sendTelegramFile } from '../lib/telegram';
+import { ContentRenderer } from './ContentRenderer';
 import {
   BookOpen, MessageSquare, BriefcaseBusiness, Brain,
   Lock, ChevronDown, ChevronUp, Copy, Check,
@@ -445,9 +446,7 @@ function IntroTab({ content, copyToClipboard, copied }) {
             {copied ? <Check size={14} /> : <Copy size={14} />}
             {copied ? 'Copied' : 'Copy'}
           </button>
-          <div style={{ fontSize: 15, lineHeight: 2, whiteSpace: 'pre-wrap', paddingTop: 8 }}>
-            {content.selfIntro}
-          </div>
+          <ContentRenderer content={content.selfIntro || content.raw} />
         </div>
       </div>
 
@@ -488,8 +487,8 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
               <ChevronDown size={18} />
             </button>
             <div className={`accordion-body ${expandedAnswer === `first-${i}` ? 'open' : ''}`}>
-              <div className="accordion-content" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
-                {q.raw}
+              <div className="accordion-content">
+                <ContentRenderer content={q.raw} />
               </div>
             </div>
           </div>
@@ -580,8 +579,8 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
                   <Check size={20} />
                   Batch {batchKey} အဖြေများ
                 </div>
-                <div className="card" style={{ whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8 }}>
-                  {secondContent[batchKey]}
+                <div className="card">
+                  <ContentRenderer content={secondContent[batchKey]} />
                 </div>
               </div>
             ))}
@@ -652,8 +651,8 @@ function ExperiencesTab({ content, isPaid, generating, onGenerate, onPayment }) 
 
   return (
     <div className="fade-in">
-      <div className="card" style={{ whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8 }}>
-        {content}
+      <div className="card">
+        <ContentRenderer content={content} />
       </div>
     </div>
   );
@@ -727,9 +726,7 @@ function MentorTab({ content, isPaid, generating, onGenerate, onPayment, copyToC
           {copied ? <Check size={14} /> : <Copy size={14} />}
           {copied ? 'Copied' : 'Copy'}
         </button>
-        <div style={{ whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, paddingTop: 8 }}>
-          {content}
-        </div>
+        <ContentRenderer content={content} />
       </div>
     </div>
   );

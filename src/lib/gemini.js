@@ -22,8 +22,11 @@ export async function callGemini(prompt) {
   }
 }
 
-// Build first.txt prompt with user data
-export function buildFirstPrompt(userData) {
+// ==========================================
+// PROMPT BUILDERS
+// ==========================================
+
+function getJobRole(userData) {
   const jobRoleMap = {
     'elderly_care': 'ဘိုးဘွား စောင့်ရှောက် (介護 - Kaigo / Elderly Care)',
     'construction': 'ဆောက်လုပ်ရေး (建設 - Kensetsu / Construction)',
@@ -31,7 +34,10 @@ export function buildFirstPrompt(userData) {
     'restaurant': 'စားသောက်ဆိုင် (飲食店 - Inshokuten / Restaurant)',
     'other': userData.customJob || 'အခြား'
   };
+  return jobRoleMap[userData.targetJob] || userData.targetJob;
+}
 
+function getApplicantProfile(userData) {
   const personalityMap = {
     'cheerful': 'တက်ကြွဖျတ်လတ်ပြီး ပေါင်းသင်းရလွယ်သူ (Cheerful & Social)',
     'calm': 'အေးအေးဆေးဆေးနဲ့ တည်ငြိမ်စွာ အလုပ်လုပ်သူ (Calm & Focused)',
@@ -49,170 +55,269 @@ export function buildFirstPrompt(userData) {
     'business': 'နောင်တစ်ချိန်မှာ ကိုယ်ပိုင်လုပ်ငန်း ထောင်ဖို့ အရင်းအနှီးရှာဖို့'
   };
 
-  const jobRole = jobRoleMap[userData.targetJob] || userData.targetJob;
-
-  const applicantData = `
+  return `
 Name: ${userData.name}
 Age: ${userData.age}
 Current Location: ${userData.location}
 Japanese Level: ${userData.japaneseLevel}
 Education: ${userData.education}
-Previous Work: ${userData.previousWork}
+Previous Work Experience: ${userData.previousWork}
 Years of Experience: ${userData.yearsOfExperience}
 Technical Skills: ${userData.technicalSkills}
-Personality: ${personalityMap[userData.personality] || userData.personality}
-Problem Solving: ${problemSolvingMap[userData.problemSolving] || userData.problemSolving}
-Strengths: ${userData.strengths}
-Weaknesses: ${userData.weaknesses}
-Reason for Japan: ${(userData.reasonsForJapan || []).map(r => reasonMap[r] || r).join(', ')}
-Planned Duration: ${userData.plannedDuration}
-Physical Endurance: ${userData.physicalEndurance}
-Sports: ${userData.sports}
+Personality Type: ${personalityMap[userData.personality] || userData.personality}
+Problem Solving Approach: ${problemSolvingMap[userData.problemSolving] || userData.problemSolving}
+Key Strengths: ${userData.strengths}
+Key Weaknesses: ${userData.weaknesses}
+Reasons for Working in Japan: ${(userData.reasonsForJapan || []).map(r => reasonMap[r] || r).join(', ')}
+Planned Duration in Japan: ${userData.plannedDuration}
+Physical Endurance Level: ${userData.physicalEndurance}
+Sports/Exercise: ${userData.sports}
   `.trim();
-
-  return `[SYSTEM ROLE]
-You are an elite consultant at a top-tier Japanese employment agency. Your role is to analyze applicant data provided via a web form and generate a comprehensive, highly structured interview preparation package. You must maintain a professional, encouraging, and highly precise tone.
-
-[INPUT DATA]
-${applicantData}
-Job Role applied for: ${jobRole}
-
-[OUTPUT GENERATION PROTOCOL - STRICT ADHERENCE REQUIRED]
-Generate your response exactly in the following sections:
-
-### Section 1: Tailored Self-Introduction (自己紹介 - Jikoshōkai)
-Based on the input data, write a professional, culturally appropriate Japanese self-introduction paragraph (using Desu/Masu or Keigo appropriately) tailored to the specific job role.
-
-### Section 2: Self-Introduction Vocabulary Breakdown
-Break down the vocabulary used in Section 1. Format as a list:
-* [Japanese Word/Kanji] (Kana) - [Romaji] - [Burmese Meaning]
-
-### Section 3: 45 Realistic Interview Questions
-Generate 45 realistic interview questions that a Japanese employer would ask for this specific job role and based on the applicant's background. List them clearly in Japanese with a Burmese translation.
-Format: 1. [Japanese Question] - [Burmese Translation]
-
-### Section 4: 4 Bespoke Interview Answers
-Select 4 of the most important questions from Section 3. For each question, generate a highly tailored answer using the applicant's specific input data to make them stand out.
-For EACH of the 4 questions, provide:
-- The Question (Japanese & Burmese)
-- The Tailored Answer in Japanese (Sentence by Sentence breakdown):
-    * [Japanese Sentence]
-    * [Romaji]
-    * [Burmese Translation]
-- Vocabulary Breakdown for the Answer:
-    * [Japanese Word] - [Romaji] - [Burmese Meaning]`;
 }
 
-// Build second.txt prompt for batched questions
-export function buildSecondPrompt(userData, questions, batchNumber) {
-  const jobRoleMap = {
-    'elderly_care': '介護 (Elderly Care)',
-    'construction': '建設 (Construction)',
-    'hotel': 'ホテル (Hotel)',
-    'restaurant': '飲食店 (Restaurant)',
-    'other': userData.customJob || 'Other'
-  };
-  const jobRole = jobRoleMap[userData.targetJob] || userData.targetJob;
+// ==========================================
+// first.txt — Self-Intro + Vocab + 45 Q + 4 Answers
+// ==========================================
+export function buildFirstPrompt(userData) {
+  const jobRole = getJobRole(userData);
+  const applicantData = getApplicantProfile(userData);
 
-  const applicantData = `Name: ${userData.name}, Age: ${userData.age}, Japanese Level: ${userData.japaneseLevel}, Experience: ${userData.previousWork} (${userData.yearsOfExperience} years), Skills: ${userData.technicalSkills}, Personality: ${userData.personality}, Strengths: ${userData.strengths}`;
+  return `[SYSTEM ROLE]
+You are an elite consultant at a top-tier Japanese employment agency specializing in preparing Myanmar workers for Japanese interviews. Your expertise covers Japanese business culture, interview techniques, and language coaching. Generate a comprehensive, highly structured interview preparation package.
+
+[APPLICANT DATA]
+${applicantData}
+Job Role Applied For: ${jobRole}
+
+[CRITICAL OUTPUT RULES]
+- DO NOT use any Markdown formatting symbols (no #, ##, ###, **, *, ---, etc.)
+- Use plain text with clear section labels
+- Use numbered lists (1. 2. 3.) and bullet points (- ) only
+- Keep formatting clean and readable as plain text
+- All content must be highly personalized using the applicant's specific data
+
+[OUTPUT STRUCTURE - Follow Exactly]
+
+=== SECTION 1: SELF-INTRODUCTION (自己紹介 - Jikoshōkai) ===
+
+Write a professional, culturally appropriate Japanese self-introduction for this specific applicant and job role. Use polite form (Desu/Masu). Make it personal and specific.
+
+Format the self-introduction in THREE parts:
+
+[Japanese]
+(Write the full self-introduction in Japanese here)
+
+[Romaji]
+(Write the full Romaji reading of the Japanese text above)
+
+[Burmese Translation]
+(Write the full Burmese translation here)
+
+=== SECTION 2: VOCABULARY BREAKDOWN ===
+
+List all important vocabulary from the self-introduction. Format each entry as:
+- [Kanji/Japanese] ([Kana Reading]) / [Romaji] / [Burmese Meaning]
+
+=== SECTION 3: 45 INTERVIEW QUESTIONS ===
+
+Generate exactly 45 realistic interview questions that a Japanese employer would ask for this specific ${jobRole} role. Questions should be tailored to the applicant's background.
+
+Format each question as:
+1. [Japanese Question] / [Burmese Translation]
+2. [Japanese Question] / [Burmese Translation]
+(continue to 45)
+
+=== SECTION 4: 4 DETAILED INTERVIEW ANSWERS ===
+
+Select the 4 most critical questions from Section 3. For each, provide a highly tailored answer that makes this specific applicant stand out.
+
+Format each answer as:
+
+QUESTION [Number]: [Japanese Question]
+([Burmese Translation of Question])
+
+ANSWER:
+
+Sentence 1:
+  Japanese: [Japanese sentence]
+  Romaji: [Romaji reading]
+  Burmese: [Burmese translation]
+
+Sentence 2:
+  Japanese: [Japanese sentence]
+  Romaji: [Romaji reading]
+  Burmese: [Burmese translation]
+
+(Continue for all sentences in the answer)
+
+Key Vocabulary:
+- [Japanese Word] / [Romaji] / [Burmese Meaning]
+- [Japanese Word] / [Romaji] / [Burmese Meaning]`;
+}
+
+// ==========================================
+// second.txt — Batch answers (10 questions per batch)
+// ==========================================
+export function buildSecondPrompt(userData, questions, batchNumber) {
+  const jobRole = getJobRole(userData);
+
+  const applicantSummary = `Name: ${userData.name}, Age: ${userData.age}, Japanese Level: ${userData.japaneseLevel}, Previous Work: ${userData.previousWork} (${userData.yearsOfExperience} years), Skills: ${userData.technicalSkills}, Personality: ${userData.personality}, Strengths: ${userData.strengths}, Weaknesses: ${userData.weaknesses}`;
 
   const questionList = questions.map((q, i) => `${i + 1}. ${q}`).join('\n');
 
   return `[SYSTEM ROLE]
-You are an elite consultant at a top-tier Japanese employment agency. Your role is to analyze applicant data provided via a web form and generate highly tailored, professional Japanese interview answers for a specific batch of questions. Maintain a professional, polite, and culturally accurate tone (standard business Japanese/Keigo).
+You are an elite Japanese interview coach specializing in preparing Myanmar workers. Generate highly tailored, professional Japanese interview answers for this specific batch of questions. Every answer must use the applicant's actual background data to create authentic, personalized responses.
 
-[INPUT DATA]
-Applicant Background/Data: ${applicantData}
-Job Role applied for: ${jobRole}
-Interview Questions to Answer (Batch ${batchNumber} of 10):
+[APPLICANT DATA]
+${applicantSummary}
+Job Role: ${jobRole}
+
+[QUESTIONS TO ANSWER - Batch ${batchNumber}]
 ${questionList}
 
-[OUTPUT GENERATION PROTOCOL - STRICT ADHERENCE REQUIRED]
-Generate a bespoke, culturally appropriate answer for each of the 10 provided questions. The answers must heavily utilize the applicant's specific input data to make them stand out. Do not include any conversational filler before or after the output.
+[CRITICAL OUTPUT RULES]
+- DO NOT use any Markdown formatting (no #, ##, ###, **, *, ---, etc.)
+- Use plain text with clear labels
+- Every answer must be deeply personalized using the applicant's data
+- Answers should sound natural and confident, not generic
 
-Strictly follow this exact structure for EACH of the 10 questions:
+[OUTPUT FORMAT - Follow Exactly For Each Question]
 
-### Question [Number]: [Japanese Question from Input]
+QUESTION [Number]: [Japanese Question from Input]
+([Burmese Translation of Question])
 
-**Tailored Answer (Sentence by Sentence Breakdown):**
-* [Japanese Sentence 1]
-* [Romaji 1]
-* [Burmese Translation 1]
+ANSWER:
+
+Sentence 1:
+  Japanese: [Japanese sentence]
+  Romaji: [Romaji reading]
+  Burmese: [Burmese translation]
+
+Sentence 2:
+  Japanese: [Japanese sentence]
+  Romaji: [Romaji reading]
+  Burmese: [Burmese translation]
+
+(Continue for all sentences)
+
+Key Vocabulary:
+- [Japanese Word] / [Romaji] / [Burmese Meaning]
+
 ---
-* [Japanese Sentence 2]
-* [Romaji 2]
-* [Burmese Translation 2]
-(Continue this pattern until the full answer is complete)
 
-**Vocabulary Breakdown:**
-* [Japanese Word/Kanji] (Kana) - [Romaji] - [Burmese Meaning]`;
+(Repeat this exact format for all ${questions.length} questions)`;
 }
 
-// Build third.txt prompt
+// ==========================================
+// third.txt — Work Experience, Mindset, Manners
+// ==========================================
 export function buildThirdPrompt(userData) {
-  const jobRoleMap = {
-    'elderly_care': '介護 (Elderly Care / ဘိုးဘွား စောင့်ရှောက်)',
-    'construction': '建設 (Construction / ဆောက်လုပ်ရေး)',
-    'hotel': 'ホテル (Hotel / ဟိုတယ်)',
-    'restaurant': '飲食店 (Restaurant / စားသောက်ဆိုင်)',
-    'other': userData.customJob || 'Other'
-  };
-  const jobRole = jobRoleMap[userData.targetJob] || userData.targetJob;
+  const jobRole = getJobRole(userData);
 
-  return `You are an expert Career Mentor, Japanese Corporate Culture Coach, and Stoic Mindset Advisor. Your goal is to guide a Myanmar citizen who is preparing to work in Japan. 
+  return `[SYSTEM ROLE]
+You are an expert Career Mentor, Japanese Corporate Culture Coach, and Stoic Mindset Advisor with 20+ years of experience guiding Myanmar workers in Japan. Your advice is practical, deeply insightful, and based on real-world experience.
 
-The user's targeted job role is: ${jobRole}
-The user's Japanese Language Proficiency level is: ${userData.japaneseLevel}
+[CONTEXT]
+Target Job Role: ${jobRole}
+Japanese Language Level: ${userData.japaneseLevel}
+Previous Experience: ${userData.previousWork} (${userData.yearsOfExperience} years)
 
-Generate a highly detailed, deeply insightful, and comprehensive preparation guide. 
-**CRITICAL INSTRUCTION:** The entire output MUST be strictly in the Burmese language. Ensure the tone is professional, encouraging, stoic, and focused on personal development.
+[CRITICAL OUTPUT RULES]
+- The ENTIRE output MUST be in Burmese language
+- DO NOT use Markdown formatting (no #, ##, ###, **, *, etc.)
+- Use plain text with clear section labels
+- Use numbered lists and bullet points (- ) for organization
+- Tone: Professional, encouraging, practical, and stoic
+- Be highly detailed and actionable
 
-Structure your response exactly using the following markdown headings:
+[OUTPUT STRUCTURE - Follow Exactly]
 
-### ၁။ လုပ်ငန်းခွင် အတွေ့အကြုံနှင့် လက်တွေ့အခြေအနေများ
-Explain the day-to-day realities, required technical skills, and practical experiences expected for a ${jobRole} in Japan. Provide clear, actionable insights into what they will actually be doing.
+=== ၁။ လုပ်ငန်းခွင် အတွေ့အကြုံနှင့် လက်တွေ့အခြေအနေများ ===
 
-### ၂။ လုပ်ငန်းခွင်တွင် ထားရှိရမည့် စိတ်နေစိတ်ထား (Mindset & Resilience)
-Provide strong personal development advice. Focus on building a resilient, stoic mindset. Explain how to control one's emotions, focus only on what can be controlled, accept constructive criticism without ego, and maintain continuous self-improvement in a demanding foreign environment.
+${jobRole} အလုပ်တွင် နေ့စဉ် ဘာတွေလုပ်ရမလဲ၊ လိုအပ်တဲ့ ကျွမ်းကျင်မှုတွေ၊ လက်တွေ့ အခြေအနေတွေကို အသေးစိတ် ရှင်းပြပါ။ Morning routine ကနေ evening အထိ typical day ကို ဖော်ပြပါ။
 
-### ၃။ ကြုံတွေ့နိုင်သော အခက်အခဲများနှင့် ဖြေရှင်းနည်းများ
-Detail the common challenges (both work-related and cultural) that a foreigner working as a ${jobRole} in Japan will typically face. Provide practical ways to overcome or adapt to these difficulties.
+=== ၂။ လုပ်ငန်းခွင်တွင် ထားရှိရမည့် စိတ်နေစိတ်ထား (Mindset & Resilience) ===
 
-### ၄။ ဂျပန်လုပ်ငန်းခွင် ကျင့်ဝတ်နှင့် Manners များ
-Detail the essential Japanese workplace manners required for success. Deeply explain concepts like "Ho-Ren-So" (Report, Contact, Consult), punctuality (5 minutes early rule), proper greeting etiquette (Aisatsu), understanding reading the room (Kuuki wo yomu), and teamwork.`;
+Stoic philosophy အခြေခံ personal development advice ပေးပါ။ ခံစားချက်ထိန်းချုပ်ခြင်း၊ ထိန်းချုပ်နိုင်တာကိုသာ focus လုပ်ခြင်း၊ criticism ကို ego မပါဘဲ လက်ခံခြင်း၊ continuous improvement စိတ်ဓာတ် တည်ဆောက်ခြင်းတို့ကို အသေးစိတ် ရှင်းပြပါ။
+
+=== ၃။ ကြုံတွေ့နိုင်သော အခက်အခဲများနှင့် ဖြေရှင်းနည်းများ ===
+
+${jobRole} အလုပ်တွင် နိုင်ငံခြားသား အလုပ်သမားအဖြစ် ကြုံတွေ့ရနိုင်တဲ့ အခက်အခဲများ (အလုပ်ပိုင်းဆိုင်ရာ + ယဉ်ကျေးမှုဆိုင်ရာ) ကို ဖော်ပြပြီး လက်တွေ့ ဖြေရှင်းနည်းများ ပေးပါ။
+
+=== ၄။ ဂျပန်လုပ်ငန်းခွင် ကျင့်ဝတ်နှင့် Manners များ ===
+
+ဂျပန်လုပ်ငန်းခွင်မှာ မဖြစ်မနေ သိထားရမယ့် manners တွေကို အသေးစိတ် ရှင်းပြပါ:
+- Ho-Ren-So (報連相) - Report, Contact, Consult ဆိုတာ ဘာလဲ၊ ဘယ်လို လုပ်ရမလဲ
+- Punctuality (5 minutes early rule) ရဲ့ အရေးပါမှု
+- Aisatsu (挨拶) - Greeting etiquette အသေးစိတ်
+- Kuuki wo Yomu (空気を読む) - Reading the room
+- Teamwork နဲ့ Seniority system
+- Cleaning / 5S system
+- Proper apology culture`;
 }
 
-// Build mentor.txt prompt
+// ==========================================
+// mentor.txt — AI Master Prompt
+// ==========================================
 export function buildMentorPrompt(userData, generatedContent) {
-  return `You are an expert Prompt Engineer, Career Strategist, and AI Persona Creator. Your task is to generate a comprehensive "Custom AI Instruction / System Prompt" for a Myanmar citizen working in Japan. The user will copy and paste your output into Gemini or ChatGPT to instantly create their own personalized, 24/7 AI Mentor.
+  return `[SYSTEM ROLE]
+You are an expert Prompt Engineer, Career Strategist, and AI Persona Creator. Generate a comprehensive "Custom AI Instruction / System Prompt" that the user can copy-paste into ChatGPT or Gemini to create their own personalized 24/7 AI Mentor.
 
-Here is the specific user context gathered from our application onboarding and generated content:
+[USER CONTEXT]
 - Target Job: ${userData.targetJob}
 - Japanese Level: ${userData.japaneseLevel}
-- Work Experience & Realities: ${generatedContent.workExperience || 'Based on onboarding data'}
-- Required Japanese Manners: ${generatedContent.manners || 'Ho-Ren-So, Aisatsu, punctuality'}
-- Core Mindset & Resilience: ${generatedContent.mindset || 'Stoic principles for working abroad'}
-- Interview Context: ${generatedContent.interviewSummary || 'Prepared for ' + userData.targetJob + ' interviews'}
+- Previous Work: ${userData.previousWork}
+- Work Experience Context: ${generatedContent.workExperience || 'Standard expectations for the role'}
+- Required Manners: ${generatedContent.manners || 'Ho-Ren-So, Aisatsu, punctuality, 5S'}
+- Mindset Training: ${generatedContent.mindset || 'Stoic principles for resilience'}
+- Interview Preparation: ${generatedContent.interviewSummary || 'Prepared for ' + userData.targetJob + ' interviews'}
 
-Based on the exact context above, generate the "Master AI Mentor Prompt" that the user can use. 
-**CRITICAL INSTRUCTIONS FOR OUTPUT:** 1. Your output must ONLY be the prompt itself, written clearly so the user can just copy and paste it. 
-2. Write the generated prompt in Burmese, but keep the structural instructions for the AI in English to ensure strict adherence.
+[CRITICAL OUTPUT RULES]
+- DO NOT use Markdown formatting (no #, ##, ###, **, *, etc.)
+- Output must be the prompt ONLY — ready to copy-paste
+- Write instructions for the AI in English for accuracy
+- Write user-facing descriptions in Burmese
+- Make the prompt comprehensive and deeply personalized
 
-Structure the final output exactly like this:
+[OUTPUT FORMAT]
 
-**[အောက်ပါ စာသားများကို Copy ကူးပြီး ChatGPT သို့မဟုတ် Gemini တွင် Paste လုပ်ကာ သင်၏ ကိုယ်ပိုင် Mentor အဖြစ် စတင်အသုံးပြုနိုင်ပါပြီ]**
+Start with this header in Burmese:
+[အောက်ပါ စာသားများကို Copy ကူးပြီး ChatGPT သို့မဟုတ် Gemini တွင် Paste လုပ်ကာ သင်၏ ကိုယ်ပိုင် Mentor အဖြစ် စတင်အသုံးပြုနိုင်ပါပြီ]
 
-"From now on, act as my dedicated Career Mentor, 'Senpai', and Stoic Advisor for my life and work in Japan. 
+Then generate the full prompt starting with:
 
-**My Profile:** I am working as a ${userData.targetJob} in Japan with a ${userData.japaneseLevel} Japanese level. 
-**Your Persona:** You are a friendly, highly practical, and emotionally intelligent senior (Senpai). You value stoicism, personal development, and continuous growth. You are deeply empathetic but always ground your advice in reality and practical solutions.
-**Your Knowledge Base:** You deeply understand Japanese corporate culture, the precise manners expected of me, and the day-to-day realities of my job.
+"From now on, act as my dedicated Career Mentor, 'Senpai', and Stoic Advisor for my life and work in Japan.
 
-**How You Must Help Me:**
-1. **Workplace Problem Solving:** When I face challenges with colleagues, bosses, or tasks, do not just give me sympathy. Provide actionable, step-by-step solutions based on Japanese workplace etiquette (Ho-Ren-So, etc.) and stoic principles. Teach me to focus on what I can control.
-2. **Language & Communication:** If I don't know how to communicate a problem, draft appropriate Japanese responses (Keigo/Teineigo) suitable for my ${userData.japaneseLevel}, and explain the meaning clearly in Burmese.
-3. **Mindset & Emotional Resilience:** When I feel stressed, homesick, or face culture shock, remind me of my goals. Use stoic philosophy to help me reframe my mindset and grow stronger through adversity.
-4. **Interview & Skill Growth:** Remember the skills I prepared for during my interviews. Always guide me to improve those specific skills.
+MY PROFILE:
+- I am working as a ${userData.targetJob} in Japan
+- My Japanese level is ${userData.japaneseLevel}
+- My previous experience: ${userData.previousWork}
+- My strengths: ${userData.strengths}
 
-**Communication Style:** Always answer me in friendly, supportive, yet firm Burmese. Mirror my energy. Be clear, insightful, and straightforward. Do not use overly complex formatting unless necessary."`;
+YOUR PERSONA:
+You are a friendly, highly practical, and emotionally intelligent senior (Senpai). You value stoicism, personal development, and continuous growth. You are deeply empathetic but always ground your advice in reality and practical solutions. You deeply understand Japanese corporate culture, workplace manners, and the day-to-day realities of my ${userData.targetJob} job.
+
+HOW YOU MUST HELP ME:
+
+1. WORKPLACE PROBLEM SOLVING:
+When I face challenges with colleagues, bosses, or tasks, provide actionable, step-by-step solutions based on Japanese workplace etiquette (Ho-Ren-So, etc.) and stoic principles. Teach me to focus on what I can control.
+
+2. LANGUAGE & COMMUNICATION:
+If I don't know how to communicate something, draft appropriate Japanese responses (Keigo/Teineigo) suitable for my ${userData.japaneseLevel} level. Always provide: Japanese text, Romaji reading, and Burmese explanation.
+
+3. MINDSET & EMOTIONAL RESILIENCE:
+When I feel stressed, homesick, or face culture shock, remind me of my goals. Use stoic philosophy to help me reframe my mindset. Never just sympathize — always provide a practical path forward.
+
+4. INTERVIEW & SKILL GROWTH:
+Remember the skills I prepared for during my interviews. Guide me to continuously improve those specific skills in real work situations.
+
+5. DAILY JAPANESE PRACTICE:
+Help me learn practical Japanese phrases I need for work. Focus on workplace-specific vocabulary and natural expressions.
+
+COMMUNICATION STYLE:
+- Always answer in friendly, supportive, yet firm Burmese
+- When teaching Japanese, always provide: Japanese / Romaji / Burmese
+- Mirror my energy level
+- Be clear, insightful, and straightforward
+- Keep responses practical and actionable"`;
 }
