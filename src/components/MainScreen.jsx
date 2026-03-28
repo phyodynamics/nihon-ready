@@ -807,32 +807,68 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
               </div>
             )}
 
-            {/* Batch answers - each toggleable */}
+            {/* Batch answers - split per question, each toggleable */}
             {Object.keys(secondContent).sort((a, b) => Number(a) - Number(b)).map(batchKey => {
               const batchNum = Number(batchKey);
               const { start, end } = getBatchRange(batchNum);
-              const answerId = `batch-${batchKey}`;
-              const isOpen = expandedAnswer === answerId;
+
+              // Split batch content into individual questions
+              const rawContent = secondContent[batchKey] || '';
+              const questionBlocks = rawContent.split(/(?=^QUESTION\s+\d+)/m).filter(b => b.trim());
 
               return (
-                <div key={batchKey} style={{ marginTop: 12 }}>
-                  <div className="accordion-item">
-                    <button
-                      className={`accordion-header ${isOpen ? 'open' : ''}`}
-                      onClick={() => setExpandedAnswer(isOpen ? null : answerId)}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Check size={16} style={{ color: 'var(--success)' }} />
-                        Q{start} ~ Q{end} အဖြေများ
-                      </span>
-                      <ChevronDown size={18} />
-                    </button>
-                    <div className={`accordion-body ${isOpen ? 'open' : ''}`}>
-                      <div className="accordion-content">
-                        <ContentRenderer content={secondContent[batchKey]} />
-                      </div>
-                    </div>
+                <div key={batchKey} style={{ marginTop: 16 }}>
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--gray-500)',
+                    padding: '8px 4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}>
+                    <Check size={14} style={{ color: 'var(--success)' }} />
+                    Q{start} ~ Q{end} အဖြေများ
                   </div>
+                  {questionBlocks.map((block, qi) => {
+                    // Extract question title from first line
+                    const firstLine = block.split('\n')[0].trim();
+                    const qTitle = firstLine.replace(/^QUESTION\s+\d+:\s*/i, '').trim();
+                    const shortTitle = qTitle.length > 40 ? qTitle.slice(0, 40) + '...' : qTitle;
+                    const ansId = `ans-${batchKey}-${qi}`;
+                    const isOpen = expandedAnswer === ansId;
+
+                    return (
+                      <div key={qi} className="accordion-item" style={{ marginBottom: 4 }}>
+                        <button
+                          className={`accordion-header ${isOpen ? 'open' : ''}`}
+                          onClick={() => setExpandedAnswer(isOpen ? null : ansId)}
+                          style={{ padding: '10px 14px' }}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                            <span style={{
+                              background: '#2e7d32',
+                              color: '#fff',
+                              borderRadius: 6,
+                              padding: '2px 8px',
+                              fontSize: 11,
+                              fontWeight: 700,
+                              flexShrink: 0,
+                            }}>Q{start + qi}</span>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {shortTitle || `မေးခွန်း ${start + qi}`}
+                            </span>
+                          </span>
+                          <ChevronDown size={16} />
+                        </button>
+                        <div className={`accordion-body ${isOpen ? 'open' : ''}`}>
+                          <div className="accordion-content">
+                            <ContentRenderer content={block} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
