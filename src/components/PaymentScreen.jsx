@@ -14,17 +14,19 @@ export function PaymentScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const userId = state.user?.id || 'N/A';
-  const onboardingCount = state.dbUser?.onboarding_count || 1;
-  const isExtraOnboarding = onboardingCount > 2;
+  const onboardingCount = state.dbUser?.onboarding_count || 0;
+  const isExtraOnboarding = state.isPaid && onboardingCount >= 2;
   const basePrice = 30000;
-  const extraPrice = 10000;
-  const totalPrice = isExtraOnboarding ? basePrice + extraPrice : basePrice;
+  const extraPrice = 15000;
+  // If already paid, extra onboarding only costs 15,000
+  // If not paid yet, base price is 30,000
+  const totalPrice = isExtraOnboarding ? extraPrice : basePrice;
 
   const features = [
     { icon: <MessageSquare size={18} />, text: 'Interview မေးခွန်း ၄၅ ခု အဖြေအပြည့်အစုံ' },
     { icon: <BriefcaseBusiness size={18} />, text: 'လုပ်ငန်းခွင် အတွေ့အကြုံနှင့် Manners' },
     { icon: <Brain size={18} />, text: 'AI Master Prompt (ကိုယ်ပိုင် AI Mentor)' },
-    { icon: <RefreshCw size={18} />, text: 'Onboarding ၂ ကြိမ် ထပ်လုပ်ခွင့်' },
+    { icon: <RefreshCw size={18} />, text: 'Onboarding ၂ ကြိမ် အခမဲ့ လုပ်ခွင့်' },
     { icon: <BookOpen size={18} />, text: 'Download .txt ဖိုင်ရယူခွင့်' },
   ];
 
@@ -152,7 +154,7 @@ export function PaymentScreen() {
       {isExtraOnboarding && (
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <span className="badge badge-warning">
-            Onboarding အပို +{extraPrice.toLocaleString()} MMK
+            Onboarding အပို ({onboardingCount + 1} ကြိမ်မြောက်) - {extraPrice.toLocaleString()} MMK
           </span>
         </div>
       )}

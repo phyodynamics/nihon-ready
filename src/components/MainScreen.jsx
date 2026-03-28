@@ -440,58 +440,99 @@ export function MainScreen() {
       </div>
 
       {/* Restart Onboarding Confirmation */}
-      {showRestartConfirm && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 999,
-          padding: 20,
-        }}>
+      {showRestartConfirm && (() => {
+        const onboardingCount = state.dbUser?.onboarding_count || 0;
+        const canFreeRestart = isPaid && onboardingCount < 2;
+        const needsExtraPayment = isPaid && onboardingCount >= 2;
+        const freeRemaining = Math.max(0, 2 - onboardingCount);
+
+        return (
           <div style={{
-            background: 'var(--white)',
-            borderRadius: 16,
-            padding: 24,
-            maxWidth: 340,
-            width: '100%',
-            boxShadow: 'var(--shadow-lg)',
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 999,
+            padding: 20,
           }}>
-            <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <RotateCcw size={36} style={{ color: 'var(--gray-400)', marginBottom: 12 }} />
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
-                Onboarding ပြန်လုပ်မလား?
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
-                အချက်အလက်အသစ်ဖြည့်ပြီး Interview content အသစ် ပြန်ဖန်တီးနိုင်ပါသည်။ လက်ရှိ content များ အစားထိုးခံရပါမည်။
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                className="btn btn-outline"
-                style={{ flex: 1 }}
-                onClick={() => setShowRestartConfirm(false)}
-              >
-                မလုပ်တော့ပါ
-              </button>
-              <button
-                className="btn btn-primary"
-                style={{ flex: 1 }}
-                onClick={() => {
-                  setShowRestartConfirm(false);
-                  dispatch({ type: 'RESET_ONBOARDING' });
-                  dispatch({ type: 'SET_SCREEN', payload: 'onboarding' });
-                }}
-              >
-                <RotateCcw size={16} />
-                ပြန်လုပ်မယ်
-              </button>
+            <div style={{
+              background: 'var(--white)',
+              borderRadius: 16,
+              padding: 24,
+              maxWidth: 340,
+              width: '100%',
+              boxShadow: 'var(--shadow-lg)',
+            }}>
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <RotateCcw size={36} style={{ color: 'var(--gray-400)', marginBottom: 12 }} />
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+                  Onboarding ပြန်လုပ်မလား?
+                </h3>
+                {canFreeRestart ? (
+                  <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
+                    အချက်အလက်အသစ်ဖြည့်ပြီး Interview content အသစ် ပြန်ဖန်တီးနိုင်ပါသည်။
+                    <br />
+                    <span style={{ fontWeight: 600, color: 'var(--black)' }}>
+                      အခမဲ့ {freeRemaining} ကြိမ် ကျန်ပါသေးသည်။
+                    </span>
+                  </p>
+                ) : needsExtraPayment ? (
+                  <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
+                    အခမဲ့ ၂ ကြိမ် သုံးပြီးပါပြီ။ ထပ်လုပ်လိုပါက
+                    <br />
+                    <span style={{ fontWeight: 700, color: 'var(--black)', fontSize: 16 }}>
+                      15,000 MMK
+                    </span>
+                    <br />
+                    ထပ်ပေးရပါမည်။
+                  </p>
+                ) : (
+                  <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.6 }}>
+                    Content များကို အသုံးပြုရန် Payment ချေရပါမည်။
+                  </p>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  className="btn btn-outline"
+                  style={{ flex: 1 }}
+                  onClick={() => setShowRestartConfirm(false)}
+                >
+                  မလုပ်တော့ပါ
+                </button>
+                {canFreeRestart ? (
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                    onClick={() => {
+                      setShowRestartConfirm(false);
+                      dispatch({ type: 'RESET_ONBOARDING' });
+                      dispatch({ type: 'SET_SCREEN', payload: 'onboarding' });
+                    }}
+                  >
+                    <RotateCcw size={16} />
+                    ပြန်လုပ်မယ်
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                    onClick={() => {
+                      setShowRestartConfirm(false);
+                      dispatch({ type: 'SET_SCREEN', payload: 'payment' });
+                    }}
+                  >
+                    <CreditCard size={16} />
+                    {needsExtraPayment ? 'Payment ချေရန်' : 'Unlock လုပ်ရန်'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

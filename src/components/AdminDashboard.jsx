@@ -412,7 +412,7 @@ function SettingsTab() {
           </div>
           <div className="payment-info-row">
             <span className="payment-info-label">Extra Onboarding</span>
-            <span className="payment-info-value">10,000 MMK</span>
+            <span className="payment-info-value">15,000 MMK</span>
           </div>
           <div className="payment-info-row">
             <span className="payment-info-label">Free Onboarding</span>
