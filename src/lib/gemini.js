@@ -157,22 +157,31 @@ This is the MOST IMPORTANT rule. Every Japanese sentence you generate MUST be re
 - Keep formatting clean and readable as plain text
 - All content must be highly personalized using the applicant's specific data
 
+[CRITICAL: LANGUAGE SEPARATION RULES]
+- [Japanese] sections must contain ONLY Japanese characters (hiragana, katakana, kanji). NEVER include romaji in parentheses like (Hajimemashite) or (watashi). NO English/romaji mixed in.
+- [Romaji] sections must contain ONLY romaji text. NO Japanese characters mixed in.
+- [Burmese Translation] sections must contain ONLY Burmese text.
+- In "Japanese:" labeled lines, write ONLY Japanese. NO romaji in parentheses.
+- In "Romaji:" labeled lines, write ONLY romaji.
+- In "Burmese:" labeled lines, write ONLY Burmese.
+- This rule is ABSOLUTE. Mixing languages in a single labeled section is FORBIDDEN.
+
 [OUTPUT STRUCTURE - Follow Exactly]
 
-=== SECTION 1: SELF-INTRODUCTION (自己紹介 - Jikoshōkai) ===
+=== SECTION 1: SELF-INTRODUCTION (自己紹介) ===
 
 Write a professional, culturally appropriate Japanese self-introduction for this specific applicant and job role. Use polite form appropriate for ${userData.japaneseLevel} level. Make it personal and specific.
 
 Format the self-introduction in THREE parts:
 
 [Japanese]
-(Write the full self-introduction in Japanese here - MUST match ${userData.japaneseLevel} level)
+(Write ONLY in Japanese here. NO romaji in parentheses. MUST match ${userData.japaneseLevel} level)
 
 [Romaji]
-(Write the full Romaji reading of the Japanese text above)
+(Write ONLY the romaji reading here. NO Japanese characters.)
 
 [Burmese Translation]
-(Write the full Burmese translation here)
+(Write ONLY in Burmese here)
 
 === SECTION 2: VOCABULARY BREAKDOWN ===
 
@@ -196,6 +205,8 @@ Select the 4 most critical questions from Section 3. For each, provide a highly 
 
 IMPORTANT: All Japanese answers MUST use grammar and vocabulary appropriate for ${userData.japaneseLevel} level.
 Structure each answer: Context/Background -> Main Point -> Supporting Detail -> Result -> Conclusion
+
+REMINDER: "Japanese:" lines = ONLY Japanese characters. "Romaji:" lines = ONLY romaji. "Burmese:" lines = ONLY Burmese. NEVER mix.
 
 Format each answer as:
 
@@ -278,6 +289,12 @@ ${questionList}
 - Each answer MUST have 4-6 sentences minimum (DO NOT give short 1-2 sentence answers)
 - Structure each answer: Context/Background -> Main Point -> Supporting Detail -> Conclusion/Future
 - Include practical examples from the applicant's experience where possible
+
+[CRITICAL: LANGUAGE SEPARATION RULES]
+- "Japanese:" lines must contain ONLY Japanese characters. NEVER include romaji in parentheses like (desu) or (shimashita). Pure Japanese only.
+- "Romaji:" lines must contain ONLY romaji. NO Japanese characters.
+- "Burmese:" lines must contain ONLY Burmese. NO Japanese or romaji.
+- Mixing languages within a single labeled line is STRICTLY FORBIDDEN.
 
 [OUTPUT FORMAT - Follow Exactly For Each Question]
 
