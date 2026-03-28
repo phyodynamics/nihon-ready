@@ -642,8 +642,16 @@ function IntroTab({ content, copyToClipboard, copied }) {
 function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchProgress, onGenerate, onPayment, expandedAnswer, setExpandedAnswer }) {
   // Calculate expected batches: 41 remaining questions / 10 per batch = 5 batches
   const remainingCount = Math.max(0, (content.questions?.length || 45) - 4);
-  const expectedBatches = Math.ceil(remainingCount / 10);
+  const BATCH_SIZE = 10;
+  const expectedBatches = Math.ceil(remainingCount / BATCH_SIZE);
   const allAnswered = Object.keys(secondContent).length >= expectedBatches;
+
+  // Calculate question range for each batch
+  function getBatchRange(batchNum) {
+    const start = 4 + (batchNum - 1) * BATCH_SIZE + 1; // first 4 are in section 4
+    const end = Math.min(start + BATCH_SIZE - 1, (content.questions?.length || 45));
+    return { start, end };
+  }
 
   return (
     <div className="fade-in">
@@ -651,7 +659,7 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
       <div className="content-section">
         <div className="content-section-title">
           <Check size={20} />
-          ဖြေပြီးသား မေးခွန်းများ
+          ဖြေပြီးသား မေးခွန်းများ (Q1 ~ Q4)
         </div>
         {content.answeredQuestions?.map((q, i) => (
           <div key={i} className="accordion-item fade-in-up" style={{ animationDelay: `${i * 0.05}s`, animationFillMode: 'both' }}>
@@ -716,14 +724,37 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
           </div>
         ) : (
           <>
-            {/* Show remaining questions */}
-            {content.questions?.slice(4).map((q, i) => (
-              <div key={i + 4} className="question-item">
-                <div className="question-number">Q{i + 5}</div>
-                <div className="question-text">{q.japanese}</div>
-                {q.burmese && <div className="question-translation">{q.burmese}</div>}
-              </div>
-            ))}
+            {/* Show remaining questions in toggleable groups */}
+            {Array.from({ length: expectedBatches }, (_, bIdx) => {
+              const { start, end } = getBatchRange(bIdx + 1);
+              const groupId = `qgroup-${bIdx}`;
+              const isOpen = expandedAnswer === groupId;
+              const questionsInGroup = content.questions?.slice(start - 1, end) || [];
+
+              return (
+                <div key={bIdx} className="accordion-item" style={{ marginTop: 8 }}>
+                  <button
+                    className={`accordion-header ${isOpen ? 'open' : ''}`}
+                    onClick={() => setExpandedAnswer(isOpen ? null : groupId)}
+                    style={{ fontSize: 14 }}
+                  >
+                    <span>Q{start} ~ Q{end} ({questionsInGroup.length} ခု)</span>
+                    <ChevronDown size={18} />
+                  </button>
+                  <div className={`accordion-body ${isOpen ? 'open' : ''}`}>
+                    <div className="accordion-content" style={{ padding: '8px 0' }}>
+                      {questionsInGroup.map((q, qi) => (
+                        <div key={qi} className="question-item" style={{ marginBottom: 6 }}>
+                          <div className="question-number">Q{start + qi}</div>
+                          <div className="question-text">{q.japanese}</div>
+                          {q.burmese && <div className="question-translation">{q.burmese}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
 
             {/* Generate batch answers button */}
             {!allAnswered && (
@@ -748,18 +779,35 @@ function QuestionsTab({ content, secondContent, isPaid, generatingBatch, batchPr
               </div>
             )}
 
-            {/* Show batch answers */}
-            {Object.keys(secondContent).sort().map(batchKey => (
-              <div key={batchKey} className="content-section" style={{ marginTop: 20 }}>
-                <div className="content-section-title">
-                  <Check size={20} />
-                  Batch {batchKey} အဖြေများ
+            {/* Show batch answers - toggleable with question range */}
+            {Object.keys(secondContent).sort((a, b) => Number(a) - Number(b)).map(batchKey => {
+              const batchNum = Number(batchKey);
+              const { start, end } = getBatchRange(batchNum);
+              const answerId = `batch-${batchKey}`;
+              const isOpen = expandedAnswer === answerId;
+
+              return (
+                <div key={batchKey} className="content-section" style={{ marginTop: 12 }}>
+                  <div className="accordion-item">
+                    <button
+                      className={`accordion-header ${isOpen ? 'open' : ''}`}
+                      onClick={() => setExpandedAnswer(isOpen ? null : answerId)}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Check size={16} style={{ color: 'var(--success)' }} />
+                        Q{start} ~ Q{end} အဖြေများ
+                      </span>
+                      <ChevronDown size={18} />
+                    </button>
+                    <div className={`accordion-body ${isOpen ? 'open' : ''}`}>
+                      <div className="accordion-content">
+                        <ContentRenderer content={secondContent[batchKey]} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="card">
-                  <ContentRenderer content={secondContent[batchKey]} />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </>
         )}
       </div>
