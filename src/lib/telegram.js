@@ -6,7 +6,6 @@ export function getTelegramWebApp() {
 }
 
 export function isTelegramEnv() {
-  // Check if running inside Telegram WebApp
   const tg = getTelegramWebApp();
   return !!tg?.initData;
 }
@@ -36,40 +35,47 @@ export function initTelegramApp() {
     tg.expand();
     tg.setHeaderColor('#ffffff');
     tg.setBackgroundColor('#ffffff');
-    // Disable closing confirmation
     if (tg.enableClosingConfirmation) {
       tg.enableClosingConfirmation();
     }
   }
 }
 
-export function sendTelegramFile(userId, fileContent, fileName) {
-  const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-  if (!botToken) return Promise.reject('No bot token');
-  
-  const blob = new Blob([fileContent], { type: 'text/plain' });
-  const formData = new FormData();
-  formData.append('chat_id', userId);
-  formData.append('document', blob, fileName);
-  formData.append('caption', 'Nihon Ready - သင့်ရဲ့ Interview Preparation Package');
-  
-  return fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
+// Send file via proxy server
+export async function sendTelegramFile(userId, fileContent, fileName) {
+  // Convert string content to base64
+  const base64Content = btoa(unescape(encodeURIComponent(fileContent)));
+
+  const response = await fetch('/api/telegram', {
     method: 'POST',
-    body: formData
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'sendDocument',
+      chat_id: userId,
+      file_content: base64Content,
+      file_name: fileName,
+      caption: 'Nihon Ready - သင့်ရဲ့ Interview Preparation Package'
+    })
   });
+
+  if (!response.ok) {
+    throw new Error('Failed to send file');
+  }
+
+  return response.json();
 }
 
-// Send notification to admin (only once to primary admin)
+// Send notification to admin via proxy (only once to primary admin)
 export async function notifyAdmin(message) {
-  const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-  if (!botToken || ADMIN_IDS.length === 0) return;
+  if (ADMIN_IDS.length === 0) return;
 
   const primaryAdminId = ADMIN_IDS[0];
   try {
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    await fetch('/api/telegram', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        action: 'sendMessage',
         chat_id: primaryAdminId,
         text: message,
         parse_mode: 'HTML'

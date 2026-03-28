@@ -46,19 +46,16 @@ export function AdminDashboard() {
       await updatePaymentStatus(payment.id, 'approved');
       await updateUser(payment.telegram_id, { is_paid: true });
 
-      // Notify admin
-      const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-      if (botToken) {
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: payment.telegram_id,
-            text: '🎉 သင့်ရဲ့ Payment ကို အတည်ပြုပြီးပါပြီ။ Nihon Ready App ထဲမှာ Content အားလုံးကို ယခု Unlock ဖြစ်ပါပြီ။',
-            parse_mode: 'HTML'
-          })
-        });
-      }
+      // Notify user via proxy
+      await fetch('/api/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sendMessage',
+          chat_id: payment.telegram_id,
+          text: '🎉 သင့်ရဲ့ Payment ကို အတည်ပြုပြီးပါပြီ။ Nihon Ready App ထဲမှာ Content အားလုံးကို ယခု Unlock ဖြစ်ပါပြီ။'
+        })
+      });
 
       showToast('Payment Approved');
       loadData();

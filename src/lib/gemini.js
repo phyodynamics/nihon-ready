@@ -1,44 +1,24 @@
-const API_KEYS = import.meta.env.VITE_GEMINI_API_KEYS?.split(',').filter(Boolean) || [];
-let currentKeyIndex = 0;
+// Gemini API - calls through proxy server (/api/gemini)
+// API keys are never exposed to the client
 
-function getNextApiKey() {
-  const key = API_KEYS[currentKeyIndex];
-  currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length;
-  return key;
-}
+export async function callGemini(prompt) {
+  try {
+    const response = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, retries: 3 })
+    });
 
-export async function callGemini(prompt, retries = 3) {
-  for (let attempt = 0; attempt < retries; attempt++) {
-    const apiKey = getNextApiKey();
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-    
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 16384,
-          }
-        })
-      });
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
-          continue;
-        }
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } catch (error) {
-      if (attempt === retries - 1) throw error;
-      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Proxy error: ${response.status}`);
     }
+
+    const data = await response.json();
+    return data.text || '';
+  } catch (error) {
+    console.error('Gemini API error:', error);
+    throw error;
   }
 }
 
