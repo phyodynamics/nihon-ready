@@ -1280,12 +1280,16 @@ textarea.input-field {
 }
 
 .content-rendered .lang-label {
-  display: inline-block;
-  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  min-width: 26px;
   margin: 8px 0 4px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .content-rendered .lang-jp {

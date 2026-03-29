@@ -90,7 +90,7 @@ function parseContent(text) {
     if (/^\[Japanese\]$/i.test(trimmed)) {
       const { block, endIndex } = collectBlock(lines, i + 1);
       elements.push(
-        <LangBlock key={key++} label="Japanese" langClass="lang-jp" lang="ja-JP" text={block} />
+        <LangBlock key={key++} label="JP" langClass="lang-jp" lang="ja-JP" text={block} />
       );
       i = endIndex;
       continue;
@@ -100,17 +100,17 @@ function parseContent(text) {
     if (/^\[Romaji\]$/i.test(trimmed)) {
       const { block, endIndex } = collectBlock(lines, i + 1);
       elements.push(
-        <LangBlock key={key++} label="Romaji" langClass="lang-ro" lang="en-US" text={block} noTTS />
+        <LangBlock key={key++} label="RO" langClass="lang-ro" lang="en-US" text={block} noTTS />
       );
       i = endIndex;
       continue;
     }
 
     // [Burmese Translation] or [Burmese] label — no TTS
-    if (/^\[Burmese( Translation)?\]$/i.test(trimmed)) {
+    if (/^\[(Burmese|Myanmar)( Translation)?\]$/i.test(trimmed)) {
       const { block, endIndex } = collectBlock(lines, i + 1);
       elements.push(
-        <LangBlock key={key++} label="Burmese" langClass="lang-my" lang="my-MM" text={block} noTTS />
+        <LangBlock key={key++} label="MY" langClass="lang-my" lang="my-MM" text={block} noTTS />
       );
       i = endIndex;
       continue;
@@ -125,26 +125,27 @@ function parseContent(text) {
     }
 
     // Japanese: / Romaji: / Burmese: inline labels with TTS
-    if (/^\s+Japanese:\s*(.+)$/.test(line)) {
-      const match = line.match(/^\s+Japanese:\s*(.+)$/);
+    // Make regex case-insensitive and allow optional bullets/dashes and leading spaces
+    if (/^[\s*\-]*Japanese:\s*(.+)$/i.test(line)) {
+      const match = line.match(/^[\s*\-]*Japanese:\s*(.+)$/i);
       elements.push(
         <LangLine key={key++} tag="JP" tagClass="jp" lang="ja-JP" text={match[1]} />
       );
       i++;
       continue;
     }
-    if (/^\s+Romaji:\s*(.+)$/.test(line)) {
-      const match = line.match(/^\s+Romaji:\s*(.+)$/);
+    if (/^[\s*\-]*Romaji:\s*(.+)$/i.test(line)) {
+      const match = line.match(/^[\s*\-]*Romaji:\s*(.+)$/i);
       elements.push(
         <LangLine key={key++} tag="RO" tagClass="ro" lang="en-US" text={match[1]} noTTS />
       );
       i++;
       continue;
     }
-    if (/^\s+Burmese:\s*(.+)$/.test(line)) {
-      const match = line.match(/^\s+Burmese:\s*(.+)$/);
+    if (/^[\s*\-]*(Burmese|Myanmar):\s*(.+)$/i.test(line)) {
+      const match = line.match(/^[\s*\-]*(Burmese|Myanmar):\s*(.+)$/i);
       elements.push(
-        <LangLine key={key++} tag="MY" tagClass="my" lang="my-MM" text={match[1]} noTTS />
+        <LangLine key={key++} tag="MY" tagClass="my" lang="my-MM" text={match[2]} noTTS />
       );
       i++;
       continue;
