@@ -366,10 +366,16 @@ export async function getAnalytics() {
     content = res3.data || [];
   }
 
+  const ADMIN_IDS = (import.meta.env.VITE_ADMIN_IDS || '').split(',').map(Number);
+
   const totalUsers = users.length;
   const paidUsers = users.filter(u => u.is_paid).length;
   const pendingPayments = payments.filter(p => p.status === 'pending').length;
-  const totalRevenue = payments.filter(p => p.status === 'approved').reduce((sum, p) => sum + (p.amount || 0), 0);
+
+  // Calculate total revenue, excluding admin test accounts from the sum
+  const totalRevenue = payments
+    .filter(p => p.status === 'approved' && !ADMIN_IDS.includes(Number(p.telegram_id)))
+    .reduce((sum, p) => sum + (p.amount || 0), 0);
   const contentGenerated = content.length;
 
   const now = new Date();
